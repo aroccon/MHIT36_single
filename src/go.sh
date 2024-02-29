@@ -11,6 +11,9 @@ make clean
 make
 make
 
+rm -rf output
+mkdir output
+
 #run the code
 ./mhit36
 

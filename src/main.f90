@@ -38,11 +38,13 @@ double precision, allocatable :: phi(:,:,:), rhsphi(:,:,:)
 double precision, allocatable :: normx(:,:,:), normy(:,:,:), normz(:,:,:)
 !particle variables
 double precision, allocatable :: xp(:,:), vp(:,:), ufp(:,:), fp(:,:) 
+character(len=40) :: namefile
+
 
 call acc_set_device_num(1,acc_device_nvidia)
 
 ! initialize parameters
-tfin=10
+tfin=20000
 dt=0.001d0
 pi=4.d0*datan(1.d0)
 lx=2.d0*pi
@@ -100,7 +102,23 @@ enddo
 call init_cufft
 
 !Save initial fields
-!call write_output(t)
+t=0
+write(namefile,'(a,i8.8,a)') './output/u_',t,'.dat'
+open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+write(55) u(:,:,:)   
+close(55)
+write(namefile,'(a,i8.8,a)') './output/v_',t,'.dat'
+open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+write(55) v(:,:,:)
+close(55)
+write(namefile,'(a,i8.8,a)') './output/w_',t,'.dat'
+open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+write(55) w(:,:,:)
+close(55)
+#if phiflag == 1
+#endif
+#if partflag == 1 
+#endif
 
 ! Start temporal loop
 do t=1,tfin
@@ -312,6 +330,28 @@ do t=1,tfin
     call cpu_time(tend)
     print '(" Time elapsed = ",f6.1," ms")',1000*(tend-tstart)
 
+
+     !output fields
+     if (mod(t,1000) .eq. 0) then
+         write(*,*) "Saving output files"
+	 write(namefile,'(a,i8.8,a)') './output/u_',t,'.dat'
+	 open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+   	 write(55) u(:,:,:)
+    	 close(55)
+   	 write(namefile,'(a,i8.8,a)') './output/v_',t,'.dat' 
+ 	 open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+   	 write(55) v(:,:,:)
+    	 close(55)
+  	 write(namefile,'(a,i8.8,a)') './output/w_',t,'.dat'
+   	 open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+    	 write(55) w(:,:,:)
+    	 close(55)
+         #if phiflag == 1
+         #endif
+         #if partflag == 1 
+         #endif
+      endif
+
 enddo
 
 
@@ -330,3 +370,9 @@ deallocate(xp,vp,ufp,fp)
 #endif
 
 end program 
+
+
+
+
+
+
