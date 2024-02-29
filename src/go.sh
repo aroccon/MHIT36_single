@@ -13,6 +13,7 @@ make
 
 rm -rf output
 mkdir output
+rm *.o
 
 #run the code
 ./mhit36

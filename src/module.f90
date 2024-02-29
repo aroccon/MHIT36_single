@@ -14,3 +14,23 @@ module fastp
     double precision, allocatable :: kx(:,:,:), ky(:,:,:), kz(:,:,:)
     real(c_double) :: p(nx,nx,nx), rhsp(nx,nx,nx)
 end module fastp
+
+
+module velocity
+   double precision, allocatable :: div(:,:,:)
+   double precision, allocatable :: u(:,:,:), v(:,:,:), w(:,:,:)
+   double precision, allocatable :: ustar(:,:,:), vstar(:,:,:), wstar(:,:,:)
+   double precision, allocatable :: rhsu(:,:,:), rhsv(:,:,:), rhsw(:,:,:)
+   double precision, allocatable :: fx(:,:,:), fy(:,:,:), fz(:,:,:)
+end module velocity
+
+
+module phase
+   double precision, allocatable :: phi(:,:,:), rhsphi(:,:,:)
+   double precision, allocatable :: normx(:,:,:), normy(:,:,:), normz(:,:,:)
+end module phase
+
+
+module particles
+   double precision, allocatable :: xp(:,:), vp(:,:), ufp(:,:), fp(:,:)
+end module particles

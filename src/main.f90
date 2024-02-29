@@ -13,6 +13,9 @@ program mhit
 use openacc
 use fastp
 use param
+use velocity
+use phase
+use particles
 
 #define phiflag 0
 #define partflag 0
@@ -28,17 +31,6 @@ double precision :: uc,vc,wc
 double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou
 integer :: tfin,i,j,k,t,im,jm,km,ip,jp,kp
 double precision :: x(nx),pi
-double precision, allocatable :: div(:,:,:)
-double precision, allocatable :: u(:,:,:), v(:,:,:), w(:,:,:)
-double precision, allocatable :: ustar(:,:,:), vstar(:,:,:), wstar(:,:,:)
-double precision, allocatable :: rhsu(:,:,:), rhsv(:,:,:), rhsw(:,:,:)
-double precision, allocatable :: fx(:,:,:), fy(:,:,:), fz(:,:,:)
-!PFM variables
-double precision, allocatable :: phi(:,:,:), rhsphi(:,:,:)
-double precision, allocatable :: normx(:,:,:), normy(:,:,:), normz(:,:,:)
-!particle variables
-double precision, allocatable :: xp(:,:), vp(:,:), ufp(:,:), fp(:,:) 
-character(len=40) :: namefile
 
 
 call acc_set_device_num(1,acc_device_nvidia)
@@ -103,19 +95,11 @@ call init_cufft
 
 !Save initial fields
 t=0
-write(namefile,'(a,i8.8,a)') './output/u_',t,'.dat'
-open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
-write(55) u(:,:,:)   
-close(55)
-write(namefile,'(a,i8.8,a)') './output/v_',t,'.dat'
-open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
-write(55) v(:,:,:)
-close(55)
-write(namefile,'(a,i8.8,a)') './output/w_',t,'.dat'
-open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
-write(55) w(:,:,:)
-close(55)
+call writefield(t,1)
+call writefield(t,2)
+call writefield(t,3)
 #if phiflag == 1
+call writefield(t,5)
 #endif
 #if partflag == 1 
 #endif
@@ -333,24 +317,16 @@ do t=1,tfin
 
      !output fields
      if (mod(t,1000) .eq. 0) then
-         write(*,*) "Saving output files"
-	 write(namefile,'(a,i8.8,a)') './output/u_',t,'.dat'
-	 open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
-   	 write(55) u(:,:,:)
-    	 close(55)
-   	 write(namefile,'(a,i8.8,a)') './output/v_',t,'.dat' 
- 	 open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
-   	 write(55) v(:,:,:)
-    	 close(55)
-  	 write(namefile,'(a,i8.8,a)') './output/w_',t,'.dat'
-   	 open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
-    	 write(55) w(:,:,:)
-    	 close(55)
-         #if phiflag == 1
-         #endif
-         #if partflag == 1 
-         #endif
-      endif
+        write(*,*) "Saving output files"
+	call writefield(t,1)
+	call writefield(t,2)
+	call writefield(t,3)
+	#if phiflag == 1
+	call writefield(t,5)
+        #endif
+        #if partflag == 1 
+        #endif
+     endif
 
 enddo
 
@@ -370,6 +346,8 @@ deallocate(xp,vp,ufp,fp)
 #endif
 
 end program 
+
+
 
 
 
