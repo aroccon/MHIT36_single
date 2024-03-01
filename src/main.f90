@@ -55,6 +55,8 @@ k0=2.d0
 
 !allocate variables
 !NS variables
+allocate(p(nx,nx,nx),rhsp(nx,nx,nx))
+allocate(pc(nx/2+1,nx,nx),rhspc(nx/2+1,nx,nx))
 allocate(u(nx,nx,nx),v(nx,nx,nx),w(nx,nx,nx))
 allocate(ustar(nx,nx,nx),vstar(nx,nx,nx),wstar(nx,nx,nx))
 allocate(rhsu(nx,nx,nx),rhsv(nx,nx,nx),rhsw(nx,nx,nx))
@@ -333,6 +335,7 @@ enddo
 
 !deallocate
 !NS variables
+deallocate(p,rhsp,pc,rhspc)
 deallocate(u,v,w)
 deallocate(ustar,vstar,wstar)
 deallocate(rhsu,rhsv,rhsw)

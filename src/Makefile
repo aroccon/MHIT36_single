@@ -2,7 +2,7 @@
 FC = nvfortran
 
 # Compiler flags
-FFLAGS = -fast -gpu=managed -acc -cudalib -Mfree -Mpreprocess -mcmodel=medium
+FFLAGS = -fast -gpu=managed -cuda -acc -cudalib -Mfree -Mpreprocess -mcmodel=medium
 #FFLAGS = -fast -gpu=managed -acc -cudalib -Minfo=accel
 
 # Executable name

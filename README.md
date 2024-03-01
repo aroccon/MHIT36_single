@@ -24,8 +24,8 @@ Future developments:
 
 Performance (only NS)
 * 64  x  64 x  64 | RTX5000 |   4 ms/timestep
-* 128 x 128 x 128 | RTX5000 |  22 ms/timestep
-* 256 x 256 x 256 | RTX5000 | 170 ms/timestep
+* 128 x 128 x 128 | RTX5000 |  17 ms/timestep
+* 256 x 256 x 256 | RTX5000 | 136 ms/timestep
 
 #### Systems supported:
 * Unix + nvfortran 
