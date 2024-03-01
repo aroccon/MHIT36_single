@@ -23,9 +23,9 @@ Future developments:
 * FFTW for CPU debug run 
 
 Performance (only NS)
-* 64  x  64 x  64 | RTX5000 |   5 ms/timestep
-* 128 x 128 x 128 | RTX5000 |  30 ms/timestep
-* 256 x 256 x 256 | RTX5000 | 240 ms/timestep
+* 64  x  64 x  64 | RTX5000 |   4 ms/timestep
+* 128 x 128 x 128 | RTX5000 |  22 ms/timestep
+* 256 x 256 x 256 | RTX5000 | 170 ms/timestep
 
 #### Systems supported:
 * Unix + nvfortran 

@@ -37,11 +37,13 @@ double precision :: pm
 !if (gerr.ne.0) write(*,*) "Error in cuFFT plan FWD:", gerr
 
 !Perform FFT3D forward of the rhsp
-!$acc data copy(rhsp,rhspc)
+!$acc data copyin(rhsp) copyout(rhspc)
 !$acc host_data use_device(rhsp,rhspc)
 gerr = gerr + cufftExecD2Z(cudaplan_fwd,rhsp,rhspc)
 !$acc end host_data
 !$acc end data
+
+!$acc enter data create(pc)
 
 !$acc kernels
 do i=1,nx/2+1
@@ -60,7 +62,7 @@ enddo
 !gerr=gerr+cufftMakePlan3d(cudaplan_bwd,nx,nx,nx,CUFFT_Z2D,workSize)
 !if (gerr.ne.0) write(*,*) "Error in cuFFT plan BWD:", gerr
 
-!$acc data copy(pc,p)
+!$acc data  copyout(p)
 !$acc host_data use_device(pc,p)
 gerr = gerr + cufftExecZ2D(cudaplan_bwd,pc,p)
 !$acc end host_data
