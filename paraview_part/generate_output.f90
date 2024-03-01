@@ -8,15 +8,15 @@ character(len=10) :: lf
 character(len=16) :: str4
 character(len=80) :: buffer
 character(len=3) :: setnum
+integer :: nstep
 
 ! end of line character
 lf=achar(10)
 
-
 write(str4(1:16),'(i16)') nptot
-write(setnum,'(i3.3)') 1
-
-write(namefile,'(a,a,a,i8.8,a)') './output/PART_',setnum,'_',nstep,'.vtk'
+!write(setnum,'(i3.3)') 1
+write(namefile,'(a,i8.8,a)') './output/part_',nstep,'.vtk'
+write(*,*) namefile
 
 open(66,file=trim(namefile),status='new',form='unformatted',access='stream',convert='big_endian')
 
@@ -34,7 +34,7 @@ write(66) trim(buffer)
 buffer='POINTS '//str4//' float'//lf
 write(66) trim(buffer)
 do i=1,nptot
- write(66) real(pp(1,i)),real(pp(2,i)),real(pp(3,i))
+ write(66) real(pp(i,1)),real(pp(i,2)),real(pp(i,3))
 enddo
 
 buffer='CELL_TYPES'//str4//lf

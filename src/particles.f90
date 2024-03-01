@@ -1,18 +1,14 @@
+
 subroutine get_velocity
 use particles
 use velocity
 use param
 implicit none
-double precision :: pi,lx,dx
 integer :: m,i,j,k,one,ip,jp,kp,im,jm,km
 double precision :: xt,yt,zt
 double precision :: c1,c2,c3,c4,c5,c6,c7,c8
 
 one=1.d0
-
-pi=4.d0*datan(1.d0)
-lx=2.d0*pi
-dx=lx/(dble(nx)-1)
 
 do m=1,np
   ! getting the cell where the particle is at
@@ -53,8 +49,58 @@ do m=1,np
   ufp(m,3)= c1*w(i,j,k)  + c2*w(ip,j,k)  + c3*w(i,jp,k)  + c4*w(ip,jp,k) +&
           + c5*w(i,k,jp) + c6*w(ip,j,kp) + c7*w(i,jp,kp) + c8*w(ip,jp,kp)
 enddo
+end subroutine
 
 
 
+
+
+
+
+
+
+
+subroutine move_part
+use openacc
+use param
+use particles
+implicit none
+integer :: m,n
+
+! Tracers, advance according to local fluid velocity
+if (ptype .eq. 1) then
+  do m=1,np
+    xp(m,1)=xp(m,1) + dt*ufp(m,1)
+    xp(m,2)=xp(m,2) + dt*ufp(m,2)
+    xp(m,3)=xp(m,3) + dt*ufp(m,3)
+  enddo
+endif
+
+! Inertial particles
+if (ptype .eq. 2) then
+! double check, not implemented ATM
+  !do m=1,np
+    !fp(m,1)=0.d0
+    !fp(m,2)=0.d0
+    !fp(m,3)=0.d0
+    !vp(m,1)=vp(m,1) + dt*fp(m,1)
+    !vp(m,2)=vp(m,2) + dt*fp(m,2)
+    !vp(m,3)=vp(m,3) + dt*fp(m,3)
+    !xp(m,1)=xp(m,1) + dt*vp(m,1)
+    !xp(m,2)=xp(m,2) + dt*vp(m,2)
+    !xp(m,3)=xp(m,3) + dt*vp(m,3)
+  !enddo
+endif
+
+!check for periodicity
+!$acc kernels
+do m=1,np
+  do n=1,3
+    if (xp(m,n) .gt.   lx) xp(m,n)=xp(m,n)-lx
+    if (xp(m,n) .lt. 0.d0) xp(m,n)=xp(m,n)+lx
+  enddo
+enddo 
+!$acc end kernels
 
 end subroutine
+

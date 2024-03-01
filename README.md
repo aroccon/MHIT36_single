@@ -12,9 +12,14 @@
 
 Main developer: A. Roccon 
 
+Current capabiltiies:
+* DNS of single-phase flow
+* Tracking of tracers
+
 Future developments:
 * Conservative Allen-Cahn equation for phase-field modeling.
-* Particles tracking (interpolation is done)
+* Tracking of inertial particles
+* Improve integration of NS (from EE to AB)
 * FFTW for CPU debug run 
 
 Performance (only NS)

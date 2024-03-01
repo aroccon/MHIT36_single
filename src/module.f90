@@ -1,6 +1,7 @@
 module param
     integer, parameter :: nx=128
-    integer, parameter :: np=0
+    integer, parameter :: np=100
+    double precision :: lx,dx,dt,pi
 end module param
 
 
@@ -33,4 +34,5 @@ end module phase
 
 module particles
    double precision, allocatable :: xp(:,:), vp(:,:), ufp(:,:), fp(:,:)
+   integer, parameter :: ptype=1 !(1=tracer, 2=inertial)
 end module particles

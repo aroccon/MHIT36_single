@@ -18,25 +18,25 @@ use phase
 use particles
 
 #define phiflag 0
-#define partflag 0
+#define partflag 1
 #define openaccflag 1
 
 implicit none
-double precision :: lx,dx,dxi,ddxi
-double precision :: dt
-double precision :: rho,mu
+double precision :: dxi,ddxi
+double precision :: rho,mu,rhoi
 double precision :: f1,f2,f3,k0
 double precision :: tstart,tend
 double precision :: uc,vc,wc
 double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou
-integer :: tfin,i,j,k,t,im,jm,km,ip,jp,kp
-double precision :: x(nx),pi
+integer :: tfin,i,j,k,t,im,jm,km,ip,jp,kp,dump
+double precision :: x(nx)
 
 
 call acc_set_device_num(1,acc_device_nvidia)
 
 ! initialize parameters
 tfin=20000
+dump=100
 dt=0.001d0
 pi=4.d0*datan(1.d0)
 lx=2.d0*pi
@@ -44,7 +44,8 @@ dx=lx/(dble(nx)-1)
 dxi=1.d0/dx
 ddxi=1.d0/dx/dx
 rho=1.d0
-mu=0.03d0
+rhoi=1.d0/rho
+mu=0.01d0
 ! forcing parameters (ABC)
 f1=1.d0
 f2=1.d0
@@ -68,7 +69,7 @@ allocate(normx(nx,nx,nx),normy(nx,nx,nx),normz(nx,nx,nx))
 #endif
 !particles arrays
 #if partflag == 1
-allocate(xp(np,3),vp(np,3),ufp(np,3),fp(np,3)
+allocate(xp(np,3),vp(np,3),ufp(np,3),fp(np,3))
 #endif
 
 x(1)=0.0d0
@@ -88,7 +89,15 @@ do k = 1,nx
     enddo
 enddo
 !$acc end kernels
-!write(*,*) 'Initialize phase field (WIP)'
+#if phiflag == 1
+write(*,*) 'Initialize phase field (WIP)'
+#endif
+
+#if partflag == 1
+write(*,*) 'Initialize particles'
+call random_number(xp)
+xp=xp*lx
+#endif
 
 !initialize the plan for cuFFT
 call init_cufft
@@ -102,6 +111,7 @@ call writefield(t,3)
 call writefield(t,5)
 #endif
 #if partflag == 1 
+call writepart(t)
 #endif
 
 ! Start temporal loop
@@ -142,15 +152,15 @@ do t=1,tfin
                 h32 = (v(i,jp,k)+v(i,jp,km))*(w(i,jp,k)+w(i,j,k))   - (v(i,j,k)+v(i,j,km))*(w(i,j,k)+w(i,jm,k))
                 h33 = (w(i,j,kp)+w(i,j,k))*(w(i,j,kp)+w(i,j,k))     - (w(i,j,k)+w(i,j,km))*(w(i,j,k)+w(i,j,km))
                 ! compute the derivative
-                h11=h11*0.25*dxi
-                h12=h12*0.25*dxi
-                h13=h13*0.25*dxi
-                h21=h21*0.25*dxi
-                h22=h22*0.25*dxi
-                h23=h23*0.25*dxi
-                h31=h31*0.25*dxi
-                h32=h32*0.25*dxi
-                h33=h33*0.25*dxi
+                h11=h11*0.25d0*dxi
+                h12=h12*0.25d0*dxi
+                h13=h13*0.25d0*dxi
+                h21=h21*0.25d0*dxi
+                h22=h22*0.25d0*dxi
+                h23=h23*0.25d0*dxi
+                h31=h31*0.25d0*dxi
+                h32=h32*0.25d0*dxi
+                h33=h33*0.25d0*dxi
                 ! add to the rhs
                 rhsu(i,j,k)=-(h11+h12+h13)
                 rhsv(i,j,k)=-(h21+h22+h23)
@@ -177,18 +187,18 @@ do t=1,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                h11 = mu*(u(ip,j,k)-2*u(i,j,k)+u(im,j,k))*ddxi
-                h12 = mu*(u(i,jp,k)-2*u(i,j,k)+u(i,jm,k))*ddxi
-                h13 = mu*(u(i,j,kp)-2*u(i,j,k)+u(i,j,km))*ddxi
-                h21 = mu*(v(ip,j,k)-2*v(i,j,k)+v(im,j,k))*ddxi
-                h22 = mu*(v(i,jp,k)-2*v(i,j,k)+v(i,jm,k))*ddxi
-                h23 = mu*(v(i,j,kp)-2*v(i,j,k)+v(i,j,km))*ddxi
-                h31 = mu*(w(ip,j,k)-2*w(i,j,k)+w(im,j,k))*ddxi
-                h32 = mu*(w(i,jp,k)-2*w(i,j,k)+w(i,jm,k))*ddxi
-                h33 = mu*(w(i,j,kp)-2*w(i,j,k)+w(i,j,km))*ddxi
-                rhsu(i,j,k)= rhsu(i,j,k)+(h11+h12+h13)/rho
-                rhsv(i,j,k)= rhsv(i,j,k)+(h21+h22+h23)/rho
-                rhsw(i,j,k)= rhsw(i,j,k)+(h31+h32+h33)/rho
+                h11 = mu*(u(ip,j,k)-2.d0*u(i,j,k)+u(im,j,k))*ddxi
+                h12 = mu*(u(i,jp,k)-2.d0*u(i,j,k)+u(i,jm,k))*ddxi
+                h13 = mu*(u(i,j,kp)-2.d0*u(i,j,k)+u(i,j,km))*ddxi
+                h21 = mu*(v(ip,j,k)-2.d0*v(i,j,k)+v(im,j,k))*ddxi
+                h22 = mu*(v(i,jp,k)-2.d0*v(i,j,k)+v(i,jm,k))*ddxi
+                h23 = mu*(v(i,j,kp)-2.d0*v(i,j,k)+v(i,j,km))*ddxi
+                h31 = mu*(w(ip,j,k)-2.d0*w(i,j,k)+w(im,j,k))*ddxi
+                h32 = mu*(w(i,jp,k)-2.d0*w(i,j,k)+w(i,jm,k))*ddxi
+                h33 = mu*(w(i,j,kp)-2.d0*w(i,j,k)+w(i,j,km))*ddxi
+                rhsu(i,j,k)=rhsu(i,j,k)+(h11+h12+h13)*rhoi
+                rhsv(i,j,k)=rhsv(i,j,k)+(h21+h22+h23)*rhoi
+                rhsw(i,j,k)=rhsw(i,j,k)+(h31+h32+h33)*rhoi
             enddo
         enddo
     enddo
@@ -222,11 +232,8 @@ do t=1,tfin
         enddo
     enddo
     !$acc end kernels
-    !write(*,*) "maxval u*", maxval(ustar)
-    !write(*,*) "maxval v*", maxval(vstar)
-    !write(*,*) "maxval w*", maxval(wstar)
-    ! Compute rhs of Poisson equation div*ustar
-    ! Compute divergence at the cell center (nx+1 avilable on u,v,w)
+
+    ! Compute rhs of Poisson equation div*ustar: divergence at the cell center 
     !$acc kernels
     do i=1,nx
         do j=1,nx
@@ -245,9 +252,7 @@ do t=1,tfin
     enddo
     !$acc end kernels
 
-    !write(*,*) "max rhsp", maxval(rhsp)
-
-    ! call Poisson solver (3DFastPoissonsolver, periodic BCs)
+    ! call Poisson solver (3DFastPoissons + periodic BCs)
     call poissonfast
 
     ! Correct velocity 
@@ -269,7 +274,7 @@ do t=1,tfin
     enddo
    !$acc end kernels 
  
-   ! Check divergence (can be skipped)
+   ! Check divergence (can be skipped in production)
    !$acc kernels 
    do i=1,nx
         do j=1,nx
@@ -286,17 +291,11 @@ do t=1,tfin
     enddo
     !$acc end kernels
 
-    !write(*,*) "Maximum value of divergence", maxval(div)
-
-    ! Advance particles
+    ! Advance particles (get velocity and advance according to particle type)
     #if partflag==1
-    ! get velocity at particle position, trilinear?
-    do i=1,np
-      
-    enddo
+    call get_velocity
+    call move_part
     #endif
-    ! avdance velocity and position
-
 
     !Check before next time step
     !check courant number
@@ -316,7 +315,7 @@ do t=1,tfin
 
 
      !output fields
-     if (mod(t,1000) .eq. 0) then
+     if (mod(t,dump) .eq. 0) then
         write(*,*) "Saving output files"
 	call writefield(t,1)
 	call writefield(t,2)
@@ -325,6 +324,7 @@ do t=1,tfin
 	call writefield(t,5)
         #endif
         #if partflag == 1 
+        call writepart(t)
         #endif
      endif
 

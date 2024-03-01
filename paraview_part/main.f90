@@ -6,26 +6,11 @@ integer :: i,j,k
 logical :: check
 character(len=40) :: namefile
 
-!! read input
-open(10,file='../sc_compiled/input.f90',form='formatted')
-read(10,*) nx
-read(10,*)
-read(10,*) nstart
-read(10,*) nend
-read(10,*)
-read(10,*)
-read(10,*) dump
-do i=1,25
-  read(10,*) !ignore 22 lines
-end do
-read(10,*) nptot
-close(10)
-
 !! overide (if there are problems)
-!nstart=100
-!dump=200
-!nend=200
-!nx=64
+nstart=0
+dump=100
+nend=1700
+nx=64
 
 ny=nx
 nz=nx

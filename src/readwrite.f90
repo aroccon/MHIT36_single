@@ -1,5 +1,7 @@
-subroutine writefield(t,fieldn)
 
+!##########################################################################
+!###########################################################################
+subroutine writefield(t,fieldn)
 use velocity
 use phase
 use fastp
@@ -48,5 +50,48 @@ write(55) phi(:,:,:)
 close(55)
 endif
 
+
+end subroutine
+!##########################################################################
+!###########################################################################
+
+
+
+
+
+
+
+subroutine writepart(t)
+use particles
+implicit none
+integer :: t
+character(len=40) :: namefile
+
+
+!Output for tracers
+if (ptype .eq. 1) then
+  write(namefile,'(a,i8.8,a)') './output/xp_',t,'.dat'
+  open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+  write(55) xp(:,:)
+  close(55)
+endif
+
+!Output for inertial tracers
+if (ptype .eq. 2) then
+  write(namefile,'(a,i8.8,a)') './output/xp_',t,'.dat'
+  open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+  write(55) xp(:,:)
+  close(55)
+
+  write(namefile,'(a,i8.8,a)') './output/vp_',t,'.dat'
+  open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+  write(55) vp(:,:)
+  close(55)
+
+  !write(namefile,'(a,i8.8,a)') './output/ufp_',t,'.dat'
+  !open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+  !write(55) ufp(:,:)
+  !close(55)
+endif
 
 end subroutine

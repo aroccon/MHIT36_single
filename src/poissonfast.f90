@@ -8,9 +8,8 @@ implicit none
 integer :: gerr,i,j,k
 complex(c_double_complex) :: pc(nx/2+1,nx,nx)
 complex(c_double_complex) :: rhspc(nx/2+1,nx,nx)
-double precision :: pi,pm
+double precision :: pm
 
-pi=4.d0*datan(1.d0)
 
 ! A. Roccon 28/02/2024
 ! 3D FFT-based solution of p_xx + p_yy  + p_zz = rhs;
