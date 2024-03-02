@@ -27,17 +27,10 @@ double precision :: pm
 ! Laplacian matrix acting on the wavenumbers
 ! Avoids solving for the zero wavenumber
 !delsq(1,1,1) = 1.d0
-!write(*,*) "delsq(30,27,29)", delsq(30,27,29)
 
-!Create plan forward and backward
-!Plan forward
-!gerr=0
-!gerr=gerr+cufftCreate(cudaplan_fwd)
-!gerr=gerr+cufftMakePlan3d(cudaplan_fwd,nx,nx,nx,CUFFT_D2Z,workSize)
-!if (gerr.ne.0) write(*,*) "Error in cuFFT plan FWD:", gerr
 
 !Perform FFT3D forward of the rhsp
-!$acc data copyin(rhsp) copyout(rhspc)
+!$acc data present(rhsp,rhspc)
 !$acc host_data use_device(rhsp,rhspc)
 gerr = gerr + cufftExecD2Z(cudaplan_fwd,rhsp,rhspc)
 !$acc end host_data
@@ -55,14 +48,7 @@ do i=1,nx/2+1
 enddo
 !$acc end kernels
 
-!Perform FFT3D backward of the solution
-!Plan backward
-!gerr=0
-!gerr=gerr+cufftCreate(cudaplan_bwd)
-!gerr=gerr+cufftMakePlan3d(cudaplan_bwd,nx,nx,nx,CUFFT_Z2D,workSize)
-!if (gerr.ne.0) write(*,*) "Error in cuFFT plan BWD:", gerr
-
-!$acc data  copyout(p)
+!$acc data  present(p,pc)
 !$acc host_data use_device(pc,p)
 gerr = gerr + cufftExecZ2D(cudaplan_bwd,pc,p)
 !$acc end host_data

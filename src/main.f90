@@ -116,6 +116,10 @@ call writefield(t,5)
 call writepart(t)
 #endif
 
+!use later for FFT (no need to load them afterwards)
+!$acc enter data create(p,pc)
+!$acc enter data create(rhsp,rhspc)
+
 ! Start temporal loop
 do t=1,tfin
 

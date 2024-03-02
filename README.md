@@ -23,9 +23,10 @@ Future developments:
 * FFTW for CPU debug run 
 
 Performance (only NS)
-* 64  x  64 x  64 | RTX5000 |   4 ms/timestep
-* 128 x 128 x 128 | RTX5000 |  17 ms/timestep
-* 256 x 256 x 256 | RTX5000 | 136 ms/timestep
+* 64  x  64 x  64 | RTX5000 |   1 ms/timestep
+* 128 x 128 x 128 | RTX5000 |   7 ms/timestep
+* 256 x 256 x 256 | RTX5000 |  50 ms/timestep
+* 384 x 384 x 384 | RTX5000 | 180 ms/timestep
 
 #### Systems supported:
 * Unix + nvfortran 
@@ -36,6 +37,6 @@ Performance (only NS)
 #### Parallelization strategy
 * The code is serial and exploit a single GPU, the poisson solver can be extended to use all the GPUs on the node 
 
-#### Output and restart files.
-* Files containing the Eulerian fields (u\_\*\*\*,v\_\*\*\*\*,w\_\*\*\*\*  etc.) and the particle positions (p\_\*\*\*) are stored in set_run/results
+#### Output files.
+* Files containing the Eulerian fields (u\_\*\*\*,v\_\*\*\*\*,w\_\*\*\*\*  etc.) and the particle positions (xp\_\*\*\*) are stored in src/output
 
