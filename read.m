@@ -1,6 +1,6 @@
 clear
-nx=128;
-np=8;
+nx=256;
+np=0;
 fid = fopen('u_00020000.dat');
 u = fread(fid, nx*nx*nx, 'double');
 fclose(fid);
@@ -16,10 +16,12 @@ w = fread(fid, nx*nx*nx, 'double');
 fclose(fid);
 w=reshape(w,[nx nx nx]);
 
-fid = fopen('xp_00000000.dat');
-xp = fread(fid, np*3, 'double');
+fid = fopen('phi_00000000.dat');
+phi = fread(fid, np*nx*nx, 'double');
 fclose(fid);
-xp=reshape(xp,[3 np]);
+phi=reshape(phi,[nx nx nx]);
+vtkwrite('phi.vtk', 'structured_points', 'phi',phi)
+
 
 vtkwrite('u.vtk', 'structured_points', 'u',u)
 vtkwrite('v.vtk', 'structured_points', 'v',v)
