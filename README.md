@@ -21,12 +21,13 @@ Current capabiltiies:
 * Tracking of tracers
 * Paraview files for particles
 * Phase-field metho (not validated)
+* Surface tension forces (not validated)
+
 
 Future developments:
 * Tracking of inertial particles
 * Improve integration of NS (from EE to AB)
 * FFTW for CPU debug run 
-* Surface tension forces 
 
 Performance (NS only)
 * 64  x  64 x  64 | RTX5000@milton |   1 ms/timestep

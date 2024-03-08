@@ -72,6 +72,8 @@ allocate(kk(nx))!,kx(nx,nx,nx),ky(nx,nx,nx),kz(nx,nx,nx))
 #if phiflag == 1
 allocate(phi(nx,nx,nx),rhsphi(nx,nx,nx))
 allocate(normx(nx,nx,nx),normy(nx,nx,nx),normz(nx,nx,nx))
+allocate(curv(nx,nx,nx),gradphix(nx,nx,nx),gradphiy(nx,nx,nx),gradphiz(nx,nx,nx))
+allocate(fxst(nx,nx,nx),fyst(nx,nx,nx),fzst(nx,nx,nx))
 #endif
 !particles arrays
 #if partflag == 1
@@ -367,9 +369,6 @@ do t=1,tfin
     do i=1,nx
         do j=1,nx
             do k=1,nx
-                !fx(i,j,k)=f1*sin(k0*x(k))+f3*sin(k0*x(j))
-                !fy(i,j,k)=f2*sin(k0*x(i))+f1*sin(k0*x(k))
-                !fz(i,j,k)=f3*sin(k0*x(j))+f2*sin(k0*x(i))
                 rhsu(i,j,k)= rhsu(i,j,k) + f1*sin(k0*x(k))+f3*sin(k0*x(j))
                 rhsv(i,j,k)= rhsv(i,j,k) + f2*sin(k0*x(i))+f1*sin(k0*x(k))
                 rhsw(i,j,k)= rhsw(i,j,k) + f3*sin(k0*x(j))+f2*sin(k0*x(i))
@@ -377,6 +376,41 @@ do t=1,tfin
         enddo
     enddo
     !$acc end kernels
+
+    ! Surface tension forces
+    #if phiflag == 1
+    !$acc kernels
+    do i=1,nx
+        do j=1,nx
+            do k=1,nx
+                ip=i+1
+                jp=j+1
+                kp=k+1
+                im=i-1
+                jm=j-1
+                km=k-1
+                if (ip .gt. nx) ip=1
+                if (jp .gt. nx) jp=1
+                if (kp .gt. nx) kp=1
+                if (im .lt. 1) im=nx
+                if (jm .lt. 1) jm=nx
+                if (km .lt. 1) km=nx 
+                curv(i,j,k)=0.5d0*(normx(ip,j,k)-normx(im,j,k))*dxi+0.5*(normy(i,jp,k)-normy(i,jm,k))*dxi+0.5*(normz(i,j,kp)-normz(i,j,km))
+                gradphix(i,j,k)=0.5*(phi(ip,j,k)-phi(im,j,k))*dxi
+                gradphiy(i,j,k)=0.5*(phi(i,jp,k)-phi(i,jm,k))*dxi
+                gradphiz(i,j,k)=0.5*(phi(i,j,kp)-phi(i,j,km))*dxi
+                fxst(i,j,k)=6*sigma*curv(i,j,k)*gradphix(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
+                fyst(i,j,k)=6*sigma*curv(i,j,k)*gradphiy(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
+                fzst(i,j,k)=6*sigma*curv(i,j,k)*gradphiz(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
+                rhsu(i,j,k)=rhsu(i,j,k) + (fxst(im,j,k)+fxst(i,j,k))*rhoi
+                rhsv(i,j,k)=rhsv(i,j,k) + (fyst(i,jm,k)+fyst(i,j,k))*rhoi
+                rhsw(i,j,k)=rhsw(i,j,k) + (fzst(i,jm,k)+fzst(i,j,k))*rhoi
+            enddo
+        enddo
+    enddo
+    !$acc end kernels
+    #endif
+
 
     ! find u, v and w star (explicit Eulero)
     !$acc kernels
