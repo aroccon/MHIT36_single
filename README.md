@@ -20,15 +20,15 @@ Current capabiltiies:
 * DNS of single-phase flow
 * Tracking of tracers
 * Paraview files for particles
+* Phase-field metho (not validated)
 
 Future developments:
-* Conservative Allen-Cahn equation for phase-field modeling (skeleton is ready)
 * Tracking of inertial particles
 * Improve integration of NS (from EE to AB)
 * FFTW for CPU debug run 
 * Surface tension forces 
 
-Performance (only NS)
+Performance (NS only)
 * 64  x  64 x  64 | RTX5000@milton |   1 ms/timestep
 * 128 x 128 x 128 | RTX5000@milton |   7 ms/timestep
 * 256 x 256 x 256 | RTX5000@milton |  50 ms/timestep
