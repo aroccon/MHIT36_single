@@ -6,15 +6,11 @@ use fastp
 use param
 implicit none
 integer :: gerr,i,j,k
-complex(c_double_complex) :: pc(nx/2+1,nx,nx)
-complex(c_double_complex) :: rhspc(nx/2+1,nx,nx)
 double precision :: pm
-
 
 ! A. Roccon 28/02/2024
 ! 3D FFT-based solution of p_xx + p_yy  + p_zz = rhs;
 ! with periodic boundary conditions along all directions
-
 
 ! Laplacian matrix acting on the wavenumbers (in principle required only once)
 !do i=1,nx
@@ -27,16 +23,15 @@ double precision :: pm
 ! Laplacian matrix acting on the wavenumbers
 ! Avoids solving for the zero wavenumber
 !delsq(1,1,1) = 1.d0
-
+!write(*,*) "delsq(30,27,29)", delsq(30,27,29)
 
 !Perform FFT3D forward of the rhsp
-!$acc data present(rhsp,rhspc)
+!$acc data copyin(rhsp) copyout(rhspc)
 !$acc host_data use_device(rhsp,rhspc)
 gerr = gerr + cufftExecD2Z(cudaplan_fwd,rhsp,rhspc)
 !$acc end host_data
 !$acc end data
 
-!$acc enter data create(pc)
 
 !$acc kernels
 do i=1,nx/2+1
@@ -48,12 +43,11 @@ do i=1,nx/2+1
 enddo
 !$acc end kernels
 
-!$acc data  present(p,pc)
+!$acc data copyin(pc) copyout(p)
 !$acc host_data use_device(pc,p)
 gerr = gerr + cufftExecZ2D(cudaplan_bwd,pc,p)
 !$acc end host_data
 !$acc end data
-
 
 ! scale p
 !$acc kernels
@@ -61,7 +55,6 @@ p = p / (nx*nx*nx)
 pm=p(1,1,1)
 p = p - pm
 !$acc end kernels
-
 
 return
 end subroutine

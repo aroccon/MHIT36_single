@@ -36,8 +36,8 @@ double precision :: x(nx)
 call acc_set_device_num(1,acc_device_nvidia)
 
 ! initialize parameters
-tfin=20000
-dump=1000
+tfin=2000
+dump=100
 dt=0.001d0
 pi=4.d0*datan(1.d0)
 lx=2.d0*pi
@@ -48,7 +48,7 @@ rho=1.d0
 rhoi=1.d0/rho
 mu=0.01d0
 radius=1.0d0
-sigma=0.07d0
+sigma=0.1d0
 eps=dx
 ! forcing parameters (ABC)
 f1=1.d0
@@ -64,7 +64,7 @@ allocate(p(nx,nx,nx),rhsp(nx,nx,nx))
 allocate(pc(nx/2+1,nx,nx),rhspc(nx/2+1,nx,nx))
 allocate(ustar(nx,nx,nx),vstar(nx,nx,nx),wstar(nx,nx,nx))
 allocate(rhsu(nx,nx,nx),rhsv(nx,nx,nx),rhsw(nx,nx,nx))
-!allocate(fx(nx,nx,nx),fy(nx,nx,nx),fz(nx,nx,nx))
+allocate(fx(nx,nx,nx),fy(nx,nx,nx),fz(nx,nx,nx),div(nx,nx,nx))
 !allocate(div(nx,nx,nx))
 allocate(delsq(nx,nx,nx))
 allocate(kk(nx))!,kx(nx,nx,nx),ky(nx,nx,nx),kz(nx,nx,nx))
@@ -128,6 +128,7 @@ t=0
 call writefield(t,1)
 call writefield(t,2)
 call writefield(t,3)
+call writefield(t,4)
 #if phiflag == 1
 call writefield(t,5)
 #endif
@@ -136,8 +137,8 @@ call writepart(t)
 #endif
 
 !use later for FFT (no need to load them afterwards)
-!$acc enter data create(p,pc)
-!$acc enter data create(rhsp,rhspc)
+!!!$acc enter data create(p,pc)
+!!!$acc enter data create(rhsp,rhspc)
 
 
 ! Start temporal loop
@@ -378,7 +379,7 @@ do t=1,tfin
     !$acc end kernels
 
     ! Surface tension forces
-    #if phiflag == 1
+    !#if phiflag == 1
     !$acc kernels
     do i=1,nx
         do j=1,nx
@@ -395,21 +396,25 @@ do t=1,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                curv(i,j,k)=0.5d0*(normx(ip,j,k)-normx(im,j,k))*dxi+0.5*(normy(i,jp,k)-normy(i,jm,k))*dxi+0.5*(normz(i,j,kp)-normz(i,j,km))
-                gradphix(i,j,k)=0.5*(phi(ip,j,k)-phi(im,j,k))*dxi
-                gradphiy(i,j,k)=0.5*(phi(i,jp,k)-phi(i,jm,k))*dxi
-                gradphiz(i,j,k)=0.5*(phi(i,j,kp)-phi(i,j,km))*dxi
-                fxst(i,j,k)=6*sigma*curv(i,j,k)*gradphix(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
-                fyst(i,j,k)=6*sigma*curv(i,j,k)*gradphiy(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
-                fzst(i,j,k)=6*sigma*curv(i,j,k)*gradphiz(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
-                rhsu(i,j,k)=rhsu(i,j,k) + (fxst(im,j,k)+fxst(i,j,k))*rhoi
-                rhsv(i,j,k)=rhsv(i,j,k) + (fyst(i,jm,k)+fyst(i,j,k))*rhoi
-                rhsw(i,j,k)=rhsw(i,j,k) + (fzst(i,jm,k)+fzst(i,j,k))*rhoi
+                curv(i,j,k)=0.5d0*(normx(ip,j,k)-normx(im,j,k))*dxi+0.5d0*(normy(i,jp,k)-normy(i,jm,k))*dxi+0.5d0*(normz(i,j,kp)-normz(i,j,km))*dxi
+                gradphix(i,j,k)=0.5d0*(phi(ip,j,k)-phi(im,j,k))*dxi
+                gradphiy(i,j,k)=0.5d0*(phi(i,jp,k)-phi(i,jm,k))*dxi
+                gradphiz(i,j,k)=0.5d0*(phi(i,j,kp)-phi(i,j,km))*dxi
+                fxst(i,j,k)=-6.d0*sigma*curv(i,j,k)*gradphix(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
+                fyst(i,j,k)=-6.d0*sigma*curv(i,j,k)*gradphiy(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
+                fzst(i,j,k)=-6.d0*sigma*curv(i,j,k)*gradphiz(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
+                rhsu(i,j,k)=rhsu(i,j,k) + 0.5d0*(fxst(im,j,k)+fxst(i,j,k))*rhoi
+                rhsv(i,j,k)=rhsv(i,j,k) + 0.5d0*(fyst(i,jm,k)+fyst(i,j,k))*rhoi
+                rhsw(i,j,k)=rhsw(i,j,k) + 0.5d0*(fzst(i,j,km)+fzst(i,j,k))*rhoi
             enddo
         enddo
     enddo
     !$acc end kernels
-    #endif
+    !#endif
+
+    !write(*,*) "rhsu", maxval(rhsu)
+    !write(*,*) "rhsv", maxval(rhsv)
+    !write(*,*) "rhsw", maxval(rhsw)
 
 
     ! find u, v and w star (explicit Eulero)
@@ -449,6 +454,8 @@ do t=1,tfin
     ! call Poisson solver (3DFastPoissons + periodic BCs)
     call poissonfast
 
+    !write(*,*) "maxp", maxval(p)
+
     ! Correct velocity 
    !$acc kernels 
     do i=1,nx
@@ -469,8 +476,8 @@ do t=1,tfin
    !$acc end kernels 
  
    ! Check divergence (can be skipped in production)
-   !!$acc kernels 
-   !do i=1,nx
+    !!$acc kernels 
+    !do i=1,nx
     !    do j=1,nx
     !        do k=1,nx
     !            ip=i+1
@@ -484,6 +491,8 @@ do t=1,tfin
     !    enddo
     !enddo
     !!$acc end kernels
+
+    !write(*,*) "maxdiv", maxval(div)
 
     ! Advance particles (get velocity and advance according to particle type)
     #if partflag==1
@@ -514,6 +523,7 @@ do t=1,tfin
 	call writefield(t,1)
 	call writefield(t,2)
 	call writefield(t,3)
+        call writefield(t,4)
 	#if phiflag == 1
 	call writefield(t,5)
         #endif
