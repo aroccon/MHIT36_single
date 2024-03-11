@@ -49,11 +49,54 @@ open(unit=55,file=namefile,form='unformatted',position='append',access='stream',
 write(55) phi(:,:,:)
 close(55)
 endif
-
-
 end subroutine
-!##########################################################################
-!###########################################################################
+
+
+
+
+
+
+
+
+subroutine readfield(t,fieldn)
+use velocity
+implicit none
+integer :: t,fieldn
+character(len=40) :: namefile
+
+if (fieldn .eq. 1) then
+write(namefile,'(a,i8.8,a)') './init/u.dat'
+open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
+write(55) u
+close(55)
+endif
+
+if (fieldn .eq. 2) then
+write(namefile,'(a,i8.8,a)') './init/v.dat'
+open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
+write(55) v
+close(55)
+endif
+
+if (fieldn .eq. 3) then
+write(namefile,'(a,i8.8,a)') './init/w.dat'
+open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
+read(55) w
+close(55)
+endif
+end subroutine
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -67,11 +110,10 @@ implicit none
 integer :: t
 character(len=40) :: namefile
 
-
 !Output for tracers
 if (ptype .eq. 1) then
   write(namefile,'(a,i8.8,a)') './output/xp_',t,'.dat'
-  open(unit=55,file=namefile,form='unformatted',position='append',access='stream',status='new')
+  open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
   write(55) xp(:,:)
   close(55)
 endif

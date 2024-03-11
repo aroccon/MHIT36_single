@@ -29,15 +29,16 @@ double precision :: f1,f2,f3,k0
 double precision :: tstart,tend
 double precision :: uc,vc,wc
 double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou
-integer :: tfin,i,j,k,t,im,jm,km,ip,jp,kp,dump
+integer :: tfin,i,j,k,t,im,jm,km,ip,jp,kp,dump,inflow
 double precision :: x(nx)
 
 
 call acc_set_device_num(1,acc_device_nvidia)
 
 ! initialize parameters
-tfin=2000
+tfin=3000
 dump=100
+inflow=1
 dt=0.001d0
 pi=4.d0*datan(1.d0)
 lx=2.d0*pi
@@ -48,7 +49,7 @@ rho=1.d0
 rhoi=1.d0/rho
 mu=0.01d0
 radius=1.0d0
-sigma=0.1d0
+sigma=0.3d0
 eps=dx
 ! forcing parameters (ABC)
 f1=1.d0
@@ -86,22 +87,31 @@ do i=2,nx
 enddo    
 
 write(*,*) "Initialize velocity field"
-!$acc kernels
-do k = 1,nx
-    do j= 1,nx
-        do i = 1,nx
-            u(i,j,k) =  sin(x(i))*cos(x(j))*cos(x(k))
-            v(i,j,k) =  cos(x(i))*sin(x(j))*cos(x(k))
-            w(i,j,k) =  0.d0
-       enddo
+if (inflow .eq. 0) then
+    write(*,*) "Initialize Taylor-green"
+    do k = 1,nx
+        do j= 1,nx
+            do i = 1,nx
+                u(i,j,k) =  sin(x(i))*cos(x(j))*cos(x(k))
+                v(i,j,k) =  cos(x(i))*sin(x(j))*cos(x(k))
+                w(i,j,k) =  0.d0
+            enddo
+         enddo
     enddo
-enddo
+endif
+if (inflow .eq. 1) then
+    write(*,*) "Initialize frow data"
+    call readfield(t,1)
+    call readfield(t,2)
+    call readfield(t,3)
+endif
+
+
 uc=maxval(u)
 vc=maxval(v)
 wc=maxval(w)
 umax=max(wc,max(uc,vc))
 write(*,*) "umax", umax
-!$acc end kernels
 #if phiflag == 1
 write(*,*) 'Initialize phase field'
 do k = 1,nx
@@ -379,7 +389,7 @@ do t=1,tfin
     !$acc end kernels
 
     ! Surface tension forces
-    !#if phiflag == 1
+    #if phiflag == 1
     !$acc kernels
     do i=1,nx
         do j=1,nx
@@ -410,7 +420,7 @@ do t=1,tfin
         enddo
     enddo
     !$acc end kernels
-    !#endif
+    #endif
 
     !write(*,*) "rhsu", maxval(rhsu)
     !write(*,*) "rhsv", maxval(rhsv)
