@@ -10,6 +10,10 @@ double precision :: c1,c2,c3,c4,c5,c6,c7,c8
 
 one=1.d0
 
+! A. Roccon 04/03/2024
+!trilinear interpolation 
+!compute velocity at particle position
+!$acc kernels
 do m=1,np
   ! getting the cell where the particle is at
   i = floor(xp(m,1))
@@ -49,6 +53,7 @@ do m=1,np
   ufp(m,3)= c1*w(i,j,k)  + c2*w(ip,j,k)  + c3*w(i,jp,k)  + c4*w(ip,jp,k) +&
           + c5*w(i,k,jp) + c6*w(ip,j,kp) + c7*w(i,jp,kp) + c8*w(ip,jp,kp)
 enddo
+!$acc end kernels
 end subroutine
 
 
@@ -78,14 +83,17 @@ endif
 
 ! Inertial particles
 if (ptype .eq. 2) then
-! double check, not implemented ATM
+! to be implemented
   !do m=1,np
+    ! compute forces on particles
     !fp(m,1)=0.d0
     !fp(m,2)=0.d0
     !fp(m,3)=0.d0
+    ! update velocity
     !vp(m,1)=vp(m,1) + dt*fp(m,1)
     !vp(m,2)=vp(m,2) + dt*fp(m,2)
     !vp(m,3)=vp(m,3) + dt*fp(m,3)
+    ! update position
     !xp(m,1)=xp(m,1) + dt*vp(m,1)
     !xp(m,2)=xp(m,2) + dt*vp(m,2)
     !xp(m,3)=xp(m,3) + dt*vp(m,3)
@@ -95,10 +103,14 @@ endif
 !check for periodicity
 !$acc kernels
 do m=1,np
-  do n=1,3
-    if (xp(m,n) .gt.   lx) xp(m,n)=xp(m,n)-lx
-    if (xp(m,n) .lt. 0.d0) xp(m,n)=xp(m,n)+lx
-  enddo
+    !particle beyond domain extension
+    if (xp(m,1) .gt. lx) xp(m,1)=xp(m,1)-lx
+    if (xp(m,2) .gt. lx) xp(m,2)=xp(m,2)-lx
+    if (xp(m,3) .gt. lx) xp(m,3)=xp(m,3)-lx
+    ! opposite case
+    if (xp(m,1) .lt. 0.d0) xp(m,1)=xp(m,1)+lx
+    if (xp(m,2) .lt. 0.d0) xp(m,2)=xp(m,2)+lx
+    if (xp(m,3) .lt. 0.d0) xp(m,3)=xp(m,3)+lx
 enddo 
 !$acc end kernels
 

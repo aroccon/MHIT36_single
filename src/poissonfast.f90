@@ -26,11 +26,11 @@ double precision :: pm
 !write(*,*) "delsq(30,27,29)", delsq(30,27,29)
 
 !Perform FFT3D forward of the rhsp
-!$acc data copyin(rhsp) copyout(rhspc)
+!$acc data copyin(rhsp) copyout(p) create(rhspc,pc)
 !$acc host_data use_device(rhsp,rhspc)
 gerr = gerr + cufftExecD2Z(cudaplan_fwd,rhsp,rhspc)
 !$acc end host_data
-!$acc end data
+!!$acc end data
 
 
 !$acc kernels
@@ -43,7 +43,7 @@ do i=1,nx/2+1
 enddo
 !$acc end kernels
 
-!$acc data copyin(pc) copyout(p)
+!!$acc data copyin(pc) copyout(p)
 !$acc host_data use_device(pc,p)
 gerr = gerr + cufftExecZ2D(cudaplan_bwd,pc,p)
 !$acc end host_data
