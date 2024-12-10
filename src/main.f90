@@ -17,7 +17,7 @@ use velocity
 use phase
 use particles
 
-#define phiflag 1
+#define phiflag 0
 #define partflag 0
 #define openaccflag 1
 
