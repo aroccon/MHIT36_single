@@ -380,13 +380,14 @@ do t=1,tfin
     do i=1,nx
         do j=1,nx
             do k=1,nx
-                rhsu(i,j,k)= rhsu(i,j,k) + f1*sin(k0*x(k))+f3*cos(k0*x(j))
-                rhsv(i,j,k)= rhsv(i,j,k) + f2*sin(k0*x(i))+f1*cos(k0*x(k))
-                rhsw(i,j,k)= rhsw(i,j,k) + f3*sin(k0*x(j))+f2*cos(k0*x(i))
+                rhsu(i,j,k)= rhsu(i,j,k) + f3*sin(k0*x(k))+f2*cos(k0*x(j))
+                rhsv(i,j,k)= rhsv(i,j,k) + f1*sin(k0*x(i))+f1*cos(k0*x(k))
+                rhsw(i,j,k)= rhsw(i,j,k) + f2*sin(k0*x(j))+f1*cos(k0*x(i))
             enddo
         enddo
     enddo
     !$acc end kernels
+
 
     ! Surface tension forces
     #if phiflag == 1
