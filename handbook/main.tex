@@ -1,0 +1,96 @@
+\documentclass[11pt]{article}
+
+\usepackage{sectsty}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb, amsfonts, amsthm}
+
+% Margins
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+\DeclareMathOperator{\erf}{erf}
+\DeclareMathOperator{\erfc}{erfc}
+
+\title{MHIT36}
+\author{Alessio Roccon}
+\date{\today}
+
+\begin{document}
+\maketitle	
+\pagebreak
+
+% Optional TOC
+% \tableofcontents
+% \pagebreak
+
+%--Paper--
+\part{Formulation}
+
+\section{Governing equations}
+
+A first tentative try of the governing equation for boiling flow reads as [adapted from Karniadakis]:
+\begin{equation}
+\nabla \cdot  {\bf u} =  0\, ,
+\end{equation}
+%where $\rho_r=\rho_v/ \rho_l$.
+
+For the Navier-Stokes equations, by assuming constant viscosity and density, the following equation can be derived:
+\begin{equation}
+\frac{\partial {\bf u}}{\partial t} + \nabla \cdot ({\bf u}{\bf u})= - \frac{ \nabla p}{\rho}  +  \nu \nabla^2 {\bf u}  + \frac{ \sigma}{\rho} k {\bf n} + {\bf f}
+\end{equation}
+
+The interface is captured using a second-order phase field method:
+\begin{equation}
+\frac{\partial \phi}{\partial t} +  \nabla \cdot ( {{\bf u} \phi }) = \nabla \cdot \left[ \gamma \left (\epsilon \nabla \phi  - \phi (1-\phi) \frac{\nabla \phi}{|\nabla \phi|}  \right) \right] \, ,
+\end{equation}
+The first two terms at the right hand side are the classical sharpening and diffusive terms.
+
+Likewise, $\epsilon$ should be set equal to: 
+\begin{equation}
+\epsilon > 0.5 \Delta x
+\end{equation}
+
+\section{Numerical implementation}
+
+
+\subsection{NS solver}
+
+Projection-correction + Poisson solver based on 3D FFT along all directions
+
+
+\subsection{CAC solver}
+
+Euler explicit + FD2.
+Solver is totally explicit 
+
+\subsection{Forcing of turbulence}
+
+When performing direct numerical simulations of homogeneous turbulence, one would like to force turbulence for two reasons. 
+First, it permits to reach higher Reynolds numbers than in freely decaying turbulence. 
+Second, under some assumptions, statistics can be obtained with time-averaging rather than ensemble averaging, which would be very costly considering the fact that refined statistics require a large number of samples. 
+To study statistically stationary turbulence, many velocity forcing schemes have been used so far in numerical simulations. 
+In homogeneous spectral simulations, large-scale forcing methods consist in providing energy to the low wavenumber modes, which is consistent with the concept of Richardson cascade. 
+For example, considering a working an external force $\bf f$ which is a linear combination of sines and cosines with wavevectors of modulus lesser than or equal to $k_f$, the forcing contribution in both
+Craya’s equation and energy spectral density equation vanishes at wave numbers greater than $k_F$.
+Therefore, in statistically stationary turbulence, this external force feeds low wavenumbers and then part of this energy is transferred to larger wavenumbers through the nonlinear term.
+
+\subsubsection{ABC forcing scheme}
+The ABC forcing is defined as follows:
+\begin{equation}
+{\bf f} = [B \cos (k_F y) + C \sin (k_F z) ]{\bf i} \\ + [C \cos (k_F z)+ A \sin (k_F x) ]{\bf j} + [A \cos (k_F x) + B \sin (k_F y)] {\bf k}\, ,
+\end{equation}
+for a given large scale wavenumber $k_F$. 
+Since ABC is an eigenfunction of the curl operator with eigenvalue $k_F$, the corresponding contribution in the helicity equation is nonzero and thus the ABC forcing injects helicity, in addition to energy, in the flow [See Intermittency in the isotropic component of helical and non-helical turbulent flows]
+Usually $A=B=C=1$, other possible choice: $A=0.9$, $B=1$ and $C=0.9$, see paper listed above.
+
+\subsubsection{TG forcing scheme}
+The TG forcing is defined as follows:
+\begin{equation}
+{\bf f} = f_0 [ \sin (k_F x)  \cos (k_F y) \cos(k_F z) {\bf i}  - \cos (k_F x) \sin (k_F y) \sin (k_F z) {\bf j}] \, ,
+\end{equation}
+Here $f_0$ is the forcing amplitude, which can be set to have in the turbulent steady state all runs with r.m.s. velocities near unity.
+
+\end{document}

@@ -36,9 +36,9 @@ double precision :: x(nx)
 call acc_set_device_num(1,acc_device_nvidia)
 
 ! initialize parameters
-tfin=10000
-dump=100
-inflow=1
+tfin=50000
+dump=1000
+inflow=0
 dt=0.0005d0
 pi=4.d0*datan(1.d0)
 lx=2.d0*pi
