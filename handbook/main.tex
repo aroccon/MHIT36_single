@@ -74,6 +74,22 @@ Thus, we can obtain the provisional field $\bf u^*$ as follows:
 {\bf u^*} = {\bf u}^n + \Delta t (  - \nabla \cdot (  {\bf u}{\bf u})^n +  \nu \nabla^2 {\bf u}^n  + {\bf f}^n)\, ,
 \end{equation}
 This provisional field (result of the the projection step) is however not divergence free and we must correct so to obtained the filed $n+1$, which should be divergence free.
+We can correct the field as follows:
+\begin{equation}
+{\bf u^{n+1}} = {\bf u}^* - \frac{\Delta t}{\rho} \nabla p^{n+1}\, ,
+\end{equation}
+where this equation comes from:
+\begin{equation}
+\frac{ {\bf u^{n+1} - u^*}}{\Delta t} = - \frac{1}{\rho} \nabla p^{n+1}\, 
+\end{equation}
+to make clear that the algorithm is really just an operator splitting approach in which one considers the convective and viscous forces (in the first half step) and the pressure forces (in the second half step) separately.
+Computing the right-hand side of the second half step requires knowledge of the pressure at $n+1$.
+This is obtained by taking the divergence and requiring that the new flow field $n+1$ is divergence free.
+\begin{equation}
+\nabla^2 p^{n+1} = \frac{\rho}{\Delta t} \nabla \cdot {\bf u^*}\, ,
+\end{equation}
+This is a Poisson equation (most expensive part of the entire scheme), which should be solved using FFT-based solvers (present case) or iterative/multigrid methods. 
+
 
 \subsection{CAC solver}
 
@@ -132,4 +148,31 @@ Following the explanation of Cant we use the procedure proposed by Kwak, Reynold
 The Batchelor–Townsend energy spectrum was used as an initial energy spectrum to create the velocity field. 
 This spectrum represents the later stages of the decay of grid turbulence and is expressed as follows:
 Code to generate a synthetic velocity field corresponding to the Batchelor–Townsend energy spectrum available here https://web.stanford.edu/$\sim$hjbae/CBC.
+
+
+
+
+
+
+\subsection{Simulation setup}
+The governing equations are solved in a triple-periodic domain with length $L=2 \pi$.
+The variable are defined on a staggered grid with scalars (pressure and phase-field variables) defined at cell center (empty dot in figure~1) and velocity components at cell faces (full circles in figure~1).
+
+
+
+
+
+
+\begin{figure}[!t]
+\centering
+    \includegraphics[width=0.3\textwidth]{staggered_2.png} 
+    \caption{Staggered grid in 2D and examples of node numbering used in MHIT36.}
+    \label{fig1}
+\end{figure}
+
+
+
 \end{document}
+
+
+
