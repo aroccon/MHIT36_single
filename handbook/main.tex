@@ -157,6 +157,7 @@ Code to generate a synthetic velocity field corresponding to the Batchelor–Tow
 \subsection{Simulation setup}
 The governing equations are solved in a triple-periodic domain with length $L=2 \pi$.
 The variable are defined on a staggered grid with scalars (pressure and phase-field variables) defined at cell center (empty dot in figure~1) and velocity components at cell faces (full circles in figure~1).
+Periodicity is implicitly applied as shown in figure~2.
 
 
 
@@ -168,6 +169,13 @@ The variable are defined on a staggered grid with scalars (pressure and phase-fi
     \includegraphics[width=0.3\textwidth]{staggered_2.png} 
     \caption{Staggered grid in 2D and examples of node numbering used in MHIT36.}
     \label{fig1}
+\end{figure}
+
+\begin{figure}[!t]
+\centering
+    \includegraphics[width=0.5\textwidth]{draw.png} 
+    \caption{Periodicity handling in MHIT36.}
+    \label{fig2}
 \end{figure}
 
 
