@@ -1,0 +1,56 @@
+function [U_c,V_c,W_c] = filterfield4(U,V,W,N_f,N_c)
+
+% initialize the interpolated fields
+U_c = zeros(N_c,N_c,N_c);
+V_c = zeros(N_c,N_c,N_c);
+W_c = zeros(N_c,N_c,N_c);
+
+% interpolate the U field
+i = 1;
+for j = 1:N_c
+    for k = 1:N_c
+        U_c(i,j,k) = 1/(4*4*4)*sum(sum(sum(U([1:2,N_f-1:N_f], (j-1)*4+1:j*4, (k-1)*4+1:k*4))));
+    end
+end
+
+for i = 2:N_c
+    for j = 1:N_c
+        for k = 1:N_c
+            U_c(i,j,k) = 1/(4*4*4)*sum(sum(sum(U((i-1)*4-1:(i-1)*4+2, (j-1)*4+1:j*4, (k-1)*4+1:k*4))));
+        end
+    end
+end
+
+% interpolate the V field
+j = 1;
+for i = 1:N_c
+    for k = 1:N_c
+        V_c(i,j,k) = 1/(4^3)*sum(sum(sum(V((i-1)*4+1:i*4, [1:2,N_f-1:N_f] , (k-1)*4+1:k*4))));
+    end
+end
+
+for j = 2:N_c
+    for i = 1:N_c
+        for k = 1:N_c
+            V_c(i,j,k) = 1/(4^3)*sum(sum(sum(V((i-1)*4+1:i*4, (j-1)*4-1:(j-1)*4+2, (k-1)*4+1:k*4))));
+        end
+    end
+end
+
+% interpolate the W field
+k = 1;
+for j = 1:N_c
+    for i = 1:N_c
+        W_c(i,j,k) = 1/(4*4*4)*sum(sum(sum(W((i-1)*4+1:i*4, (j-1)*4+1:j*4, [1:2,N_f-1:N_f]))));
+    end
+end
+
+for k = 2:N_c
+    for j = 1:N_c
+        for i = 1:N_c
+            W_c(i,j,k) = 1/(4*4*4)*sum(sum(sum(W((i-1)*4+1:i*4, (j-1)*4+1:j*4, (k-1)*4-1:(k-1)*4+2))));
+        end
+    end
+end
+
+end

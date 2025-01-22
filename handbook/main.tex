@@ -59,7 +59,21 @@ Likewise, $\epsilon$ should be set equal to:
 \subsection{NS solver}
 
 Projection-correction + Poisson solver based on 3D FFT along all directions
-
+The first step is to rewrite the NS equations as follows:
+\begin{equation}
+\frac{\partial {\bf u}}{\partial t} = - \nabla \cdot ({\bf u}{\bf u}) - \frac{ \nabla p}{\rho}  +  \nu \nabla^2 {\bf u}  + \frac{ \sigma}{\rho} k {\bf n} + {\bf f}
+\end{equation}
+Then, we perform the projection step where the right hand side is computed using the right hand side evaluated at time step $n$.
+As pressure is not known, the pressure gradient term is ignored during this first step.
+Discretizing in time the equation and ignoring the pressure gradient term as well as the surface tension term (for simplicity), we have:
+\begin{equation}
+\frac{ {\bf u^* - u^n}}{\Delta t} = - \nabla \cdot ({\bf u}{\bf u})^n +  \nu \nabla^2 {\bf u}^n  + {\bf f}^n
+\end{equation}
+Thus, we can obtain the provisional field $\bf u^*$ as follows:
+\begin{equation}
+{\bf u^*} = {\bf u}^n + \Delta t (  - \nabla \cdot (  {\bf u}{\bf u})^n +  \nu \nabla^2 {\bf u}^n  + {\bf f}^n)\, ,
+\end{equation}
+This provisional field (result of the the projection step) is however not divergence free and we must correct so to obtained the filed $n+1$, which should be divergence free.
 
 \subsection{CAC solver}
 
@@ -93,4 +107,29 @@ The TG forcing is defined as follows:
 \end{equation}
 Here $f_0$ is the forcing amplitude, which can be set to have in the turbulent steady state all runs with r.m.s. velocities near unity.
 
+\subsubsection{Lundgren scheme}
+A local force proportional to the local velocity is imposed on the fluid:
+\begin{equation}
+{\bf f} = A_f {\bf u}\, ,
+\end{equation}
+where the coefficient $A_f$ is calculated as follows:
+\begin{equation}
+A_f = \frac{\epsilon}{3 \langle u_{rms}^2 \rangle }
+\end{equation}
+To generate turbulence, the Lundgren forcing requires a non- zero initial velocity field
+
+
+
+\subsubsection{Mallouppas-type force}
+
+The forcing scheme proposed by Mallouppas, George, and van Wachem reads as follows:
+\begin{equation}
+{\bf f} = \frac{\rho}{\Delta t} \frac{\sqrt{k_{wanted}} - \sqrt{k_{computed}} }{\sqrt{k_{wanted}}}{\bf u}_{triggered}
+\end{equation}
+where $\Delta t$ is the time step, $k_{wanted}$ is the specified turbulent kinetic energy, $k_{computed}$ is the computed turbulence kinetic energy of the domain, and ${\bf u}_triggered$ is a pseudo-velocity field, which is
+carefully chosen and synthesized from a model spectrum.
+Following the explanation of Cant we use the procedure proposed by Kwak, Reynolds, and Ferziger to generate a divergence-free isotropic velocity field corresponding to a given energy spectrum. 
+The Batchelor–Townsend energy spectrum was used as an initial energy spectrum to create the velocity field. 
+This spectrum represents the later stages of the decay of grid turbulence and is expressed as follows:
+Code to generate a synthetic velocity field corresponding to the Batchelor–Townsend energy spectrum available here https://web.stanford.edu/$\sim$hjbae/CBC.
 \end{document}

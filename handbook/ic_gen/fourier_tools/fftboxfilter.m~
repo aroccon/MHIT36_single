@@ -1,0 +1,19 @@
+function [U_hat,V_hat,W_hat] = fftboxfilter(U_hat,V_hat,W_hat,N,m)
+
+% perform a box filter operation is spectral space
+ffac = exp(1i*pi*m/N);
+
+% Shift the phase of the Fourier transform so that evaluation gives the
+% value at halve a grid cell later
+for im = 1:N
+    for jm = 1:N
+        for km = 1:N
+            boxfac =  ffac(im)*ffac(jm)*ffac(km);
+            U_hat(im,jm,km) = boxfac*U_hat(im,jm,km);
+            V_hat(im,jm,km) = boxfac*V_hat(im,jm,km);
+            W_hat(im,jm,km) = boxfac*W_hat(im,jm,km);
+        end
+    end
+end
+
+end

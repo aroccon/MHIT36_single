@@ -1,0 +1,21 @@
+function [U_c,V_c,W_c] = ifftgetstagfilt(U,V,W,N,alph)
+
+% extracts the staggered values for a alph times coarser grid
+N_c = N/alph;
+
+U_c = zeros(N_c,N_c,N_c);
+V_c = zeros(N_c,N_c,N_c);
+W_c = zeros(N_c,N_c,N_c);
+
+% Apply the box filter to each component
+for in = 1:N_c
+    for jn = 1:N_c
+        for kn = 1:N_c
+            U_c(in,jn,kn) = U(alph*in,alph)
+            V_c(in,jn,kn) = 
+            W_c(in,jn,kn) = 
+        end
+    end
+end
+
+end
