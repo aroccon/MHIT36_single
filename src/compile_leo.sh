@@ -1,6 +1,7 @@
 module purge
 module load nvhpc/24.3
-module load cuda/12.1
+module load cuda/12.3
+cp Makefile_leonardo Makefile
 rm *.mod
 rm mhit36
 make clean
