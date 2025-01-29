@@ -180,6 +180,61 @@ Periodicity is implicitly applied as shown in figure~2.
 
 
 
+\section{HIT fundamentals}
+
+The computation of some fundamentals length and time scales is reported in the following.
+These quantities should be checked that simulation results are in agreement with theoretical results and archival literature.
+The first one is the spectrum of turbulent kinetic energy, as shown in figure~\ref{spectra}.
+We can distinguish between the inertial range and the dissipative range (viscous effect dominant).
+We can also see the energy cascade from small wavenumber (larger vortex) to high wavenumber (small vortex).
+In the inertial range, the spectrum should agree with the following scaling:
+\begin{equation}
+E(k)=\alpha \epsilon^{2/3} k^{-5/3}\, ,
+\end{equation}
+where $\alpha=1.6$ is the Kolmogorov constant and $\epsilon$ is the dissipation rate.
+
+\begin{figure}[!t]
+\centering
+    \includegraphics[width=0.8\textwidth]{spectra.png} 
+    \caption{Example of HIT spectrum.}
+    \label{spectra}
+\end{figure}
+
+\noindent
+Other quantities of interest:
+Taylor micro-scale (length scale):
+\begin{equation}
+\lambda=\sqrt{\frac{15 \nu}{\epsilon}} u'
+\end{equation}
+or also 
+\begin{equation}
+\lambda=\sqrt{\frac{u'}{  \left(  \overline{ \frac{\partial u'}{ \partial  x} } \right)^2}}
+\end{equation}
+where we used the definition of dissipation for HIT:
+\begin{equation}
+\epsilon=15 \nu  \left(  \overline{ \frac{\partial u'}{ \partial  x} } \right)^2
+\end{equation}
+
+\noindent
+Kolmogorov length scale:
+\begin{equation}
+\eta_k = \left( \frac{\nu^3 }{\epsilon} \right)^{1/4}
+\end{equation}
+where one should check that a simulation is well resolved if $k_{max} \eta_k > 1$ (equal to ensures the best accuracy).
+The value $k_{max}$ is the highest wavenumber resolved and can be computed as follows:
+\begin{equation}
+k_{max}= \pi / \Delta
+\end{equation}
+where $\Delta = 2*pi / N_x$ where $2 \pi$ is the length of the domain.
+
+\noindent
+Correlation to obtain some fast estimates:
+\begin{equation}
+\epsilon \simeq \frac{u'^3}{L}
+\end{equation}
+where $L$ is the integral time scale.
+
+
 \end{document}
 
 

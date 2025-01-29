@@ -162,9 +162,9 @@ do t=1,tfin
     ! Compute convective term (A)
     #if phiflag == 1
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -187,9 +187,9 @@ do t=1,tfin
 
     !Compute diffusive term 
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -213,9 +213,9 @@ do t=1,tfin
     !Compute Sharpening term
     ! Step 1: Compute gradients
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -238,9 +238,9 @@ do t=1,tfin
 
     ! Step 2: Compute normals (1.e-16 is a numerical tolerance)
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 normod = 1.d0/(sqrt(normx(i,j,k)**2d0 + normy(i,j,k)**2d0 + normz(i,j,k)**2d0) + 1.0E-16)
                 normx(i,j,k) = normx(i,j,k)*normod
                 normy(i,j,k) = normy(i,j,k)*normod
@@ -255,9 +255,9 @@ do t=1,tfin
     ! Compute sharpening term
     !$acc kernels
     gamma=1.d0*umax
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -281,9 +281,9 @@ do t=1,tfin
 
     ! Compute new phase field n+1
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 phi(i,j,k) = phi(i,j,k) + dt*rhsphi(i,j,k)
             enddo
         enddo
@@ -297,9 +297,9 @@ do t=1,tfin
     ! Projection step, convective terms
     !Convective terms NS
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -343,9 +343,9 @@ do t=1,tfin
   
     ! Compute viscous terms
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -377,11 +377,11 @@ do t=1,tfin
 
     ! forcing term (always x because is the same axis)
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 rhsu(i,j,k)= rhsu(i,j,k) + f3*sin(k0*x(k))+f2*cos(k0*x(j))
-                rhsv(i,j,k)= rhsv(i,j,k) + f1*sin(k0*x(i))+f1*cos(k0*x(k))
+                rhsv(i,j,k)= rhsv(i,j,k) + f1*sin(k0*x(i))+f3*cos(k0*x(k))
                 rhsw(i,j,k)= rhsw(i,j,k) + f2*sin(k0*x(j))+f1*cos(k0*x(i))
             enddo
         enddo
@@ -392,9 +392,9 @@ do t=1,tfin
     ! Surface tension forces
     #if phiflag == 1
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -430,9 +430,9 @@ do t=1,tfin
 
     ! find u, v and w star (explicit Eulero)
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ustar(i,j,k) = u(i,j,k) + dt*rhsu(i,j,k)
                 vstar(i,j,k) = v(i,j,k) + dt*rhsv(i,j,k)
                 wstar(i,j,k) = w(i,j,k) + dt*rhsw(i,j,k)
@@ -443,9 +443,9 @@ do t=1,tfin
 
     ! Compute rhs of Poisson equation div*ustar: divergence at the cell center 
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -469,9 +469,9 @@ do t=1,tfin
 
     ! Correct velocity 
    !$acc kernels 
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 im=i-1
                 jm=j-1
                 km=k-1
