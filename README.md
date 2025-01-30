@@ -32,6 +32,8 @@ Performance (NS only)
 * 128 x 128 x 128 | RTX5000@milton |  14 ms/timestep
 * 128 x 128 x 128 | A100@Leonardo  |   5 ms/timestep
 * 256 x 256 x 256 | A100@Leonardo  |  40 ms/timestep
+* 512 x 512 x 512 | A100@Leonardo  | 320 ms/timestep
+
 
 Max resolution tested:
 * 256 x 256 x 256 | RTX5000@milton - 16 GB VRAM
