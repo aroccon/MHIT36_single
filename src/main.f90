@@ -36,10 +36,10 @@ double precision :: x(nx)
 call acc_set_device_num(1,acc_device_nvidia)
 
 ! initialize parameters
-tfin=50000
-dump=1000
+tfin=300000
+dump=10000
 inflow=0
-dt=0.0005d0
+dt=0.0002d0
 pi=4.d0*datan(1.d0)
 lx=2.d0*pi
 dx=lx/(dble(nx)-1)
@@ -47,7 +47,7 @@ dxi=1.d0/dx
 ddxi=1.d0/dx/dx
 rho=1.d0
 rhoi=1.d0/rho
-mu=0.01d0
+mu=0.006d0
 radius=1.0d0
 sigma=0.3d0
 eps=dx
@@ -162,9 +162,9 @@ do t=1,tfin
     ! Compute convective term (A)
     #if phiflag == 1
     !$acc kernels
-    do k=1,nx
+    do i=1,nx
         do j=1,nx
-            do i=1,nx
+            do k=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -187,9 +187,9 @@ do t=1,tfin
 
     !Compute diffusive term 
     !$acc kernels
-    do k=1,nx
+    do i=1,nx
         do j=1,nx
-            do i=1,nx
+            do k=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -213,9 +213,9 @@ do t=1,tfin
     !Compute Sharpening term
     ! Step 1: Compute gradients
     !$acc kernels
-    do k=1,nx
+    do i=1,nx
         do j=1,nx
-            do i=1,nx
+            do k=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -238,9 +238,9 @@ do t=1,tfin
 
     ! Step 2: Compute normals (1.e-16 is a numerical tolerance)
     !$acc kernels
-    do k=1,nx
+    do i=1,nx
         do j=1,nx
-            do i=1,nx
+            do k=1,nx
                 normod = 1.d0/(sqrt(normx(i,j,k)**2d0 + normy(i,j,k)**2d0 + normz(i,j,k)**2d0) + 1.0E-16)
                 normx(i,j,k) = normx(i,j,k)*normod
                 normy(i,j,k) = normy(i,j,k)*normod
@@ -281,9 +281,9 @@ do t=1,tfin
 
     ! Compute new phase field n+1
     !$acc kernels
-    do k=1,nx
+    do i=1,nx
         do j=1,nx
-            do i=1,nx
+            do k=1,nx
                 phi(i,j,k) = phi(i,j,k) + dt*rhsphi(i,j,k)
             enddo
         enddo
@@ -380,9 +380,13 @@ do t=1,tfin
     do k=1,nx
         do j=1,nx
             do i=1,nx
+                ! ABC forcing
                 rhsu(i,j,k)= rhsu(i,j,k) + f3*sin(k0*x(k))+f2*cos(k0*x(j))
                 rhsv(i,j,k)= rhsv(i,j,k) + f1*sin(k0*x(i))+f3*cos(k0*x(k))
                 rhsw(i,j,k)= rhsw(i,j,k) + f2*sin(k0*x(j))+f1*cos(k0*x(i))
+                ! TG Forcing
+                !rhsu(i,j,k)= rhsu(i,j,k) + f1*sin(k0*x(i))*cos(k0*x(j))*cos(k0*x(k))
+                !rhsv(i,j,k)= rhsv(i,j,k) - f1*cos(k0*x(i))*sin(k0*x(j))*sin(k0*x(k))
             enddo
         enddo
     enddo
@@ -392,9 +396,9 @@ do t=1,tfin
     ! Surface tension forces
     #if phiflag == 1
     !$acc kernels
-    do k=1,nx
+    do i=1,nx
         do j=1,nx
-            do i=1,nx
+            do k=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
