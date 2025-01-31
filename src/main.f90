@@ -9,7 +9,7 @@ program mhit
 ! Runs on Nvidia GPU (cuFFT), FFTW to be implemented 
 ! Eulero explicit in time (to be ubgraded to AB for NS)
 
-
+use ieee_arithmetic
 use openacc
 use fastp
 use param
@@ -526,6 +526,7 @@ do t=1,tfin
     cou=umax*dt*dxi
 
     write(*,*) "Courant number             ", cou
+    if (ieee_is_nan(cou)) stop "CFL is Nan -> stop, stop, stop"
     !$acc end kernels
 
     call cpu_time(tend)
