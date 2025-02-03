@@ -525,13 +525,12 @@ do t=1,tfin
     umax=max(wc,max(uc,vc))
     cou=umax*dt*dxi
 
+    !$acc end kernels
     write(*,*) "Courant number             ", cou
     if (ieee_is_nan(cou)) stop "CFL is Nan -> stop, stop, stop"
-    !$acc end kernels
 
     call cpu_time(tend)
     print '(" Time elapsed = ",f6.1," ms")',1000*(tend-tstart)
-
 
      !output fields
      if (mod(t,dump) .eq. 0) then
