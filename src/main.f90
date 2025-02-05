@@ -81,7 +81,7 @@ write(*,*) "Initialize velocity field (fresh start)"
     endif
 endif
 if (restart .eq. 1) then !restart, ignore inflow and read the tstart field 
-    write(*,*) "Initialize velocity field (restart, from output folder), iteration:", tstart
+    write(*,*) "Initialize velocity field (from output folder), iteration:", tstart
     call readfield_restart(tstart,1)
     call readfield_restart(tstart,2)
     call readfield_restart(tstart,3)
@@ -95,6 +95,7 @@ wc=maxval(w)
 umax=max(wc,max(uc,vc))
 cou=umax*dt*dxi
 write(*,*) "Courant number:",cou
+
 
 ! initialize phase-field
 #if phiflag == 1
@@ -126,6 +127,7 @@ call init_cufft
 
 !Save initial fields (only if a fresh start)
 if (restart .eq. 0) then
+    write(*,*) "Save initial fields"
     call writefield(tstart,1)
     call writefield(tstart,2)
     call writefield(tstart,3)
@@ -506,7 +508,7 @@ do t=tstart,tfin
 
 
     cou=umax*dt*dxi
-    write(*,*) "Courant number             ", cou
+    write(*,*) "Courant number:",cou
     if (cou .gt. 7) stop "Unstable -> stop, stop, stop"
 
     call cpu_time(timef)

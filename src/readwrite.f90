@@ -79,14 +79,14 @@ character(len=40) :: namefile
 if (fieldn .eq. 1) then
 write(namefile,'(a,i8.8,a)') './init/u.dat'
 open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
-write(55) u
+read(55) u
 close(55)
 endif
 
 if (fieldn .eq. 2) then
 write(namefile,'(a,i8.8,a)') './init/v.dat'
 open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
-write(55) v
+read(55) v
 close(55)
 endif
 
@@ -133,20 +133,23 @@ character(len=40) :: namefile
 ! fieldn=5 means phi
 
 if (fieldn .eq. 1) then
+write(*,*) "Read u"
 write(namefile,'(a,i8.8,a)') './output/u_',t,'.dat'
 open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
-write(55) u
+read(55) u
 close(55)
 endif
 
 if (fieldn .eq. 2) then
+write(*,*) "Read v"
 write(namefile,'(a,i8.8,a)') './output/v_',t,'.dat'
 open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
-write(55) v
+read(55) v
 close(55)
 endif
 
 if (fieldn .eq. 3) then
+write(*,*) "Read w"
 write(namefile,'(a,i8.8,a)') './output/w_',t,'.dat'
 open(unit=55,file=namefile,form='unformatted',access='stream',status='old',convert='little_endian')
 read(55) w

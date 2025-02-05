@@ -38,25 +38,31 @@ dxi=1.d0/dx
 ddxi=1.d0/dx/dx
 rhoi=1.d0/rho
 
-!for debug only, check parameters
-write(*,*) "******MHIT36******"
+!enable/disable for debug check parameters
+write(*,*) "----------------------------------------------"
+write(*,*) "███    ███ ██   ██ ██ ████████ ██████   ██████"  
+write(*,*) "████  ████ ██   ██ ██    ██         ██ ██"       
+write(*,*) "██ ████ ██ ███████ ██    ██     █████  ███████"  
+write(*,*) "██  ██  ██ ██   ██ ██    ██         ██ ██    ██" 
+write(*,*) "██      ██ ██   ██ ██    ██    ██████   ██████"         
+write(*,*) "----------------------------------------------"
 write(*,*) "Restart ", restart
 write(*,*) "Tstart  ", tstart
 write(*,*) "Tfin    ", tfin
 write(*,*) "Dump    ", dump
-write(*,*) "inflow", inflow
-write(*,*) "dt", dt
-write(*,*) "mu", mu
-write(*,*) "rho", rho
-write(*,*) "f1,f2,f3,k0", f1,f2,f3,k0
-write(*,*) "radius", radius
-write(*,*) "sigma", sigma
-write(*,*) "eps", eps
-write(*,*) "lx", lx
-write(*,*) "dx", dx
-write(*,*) "dxi", dxi
-write(*,*) "ddxi", ddxi
-write(*,*) "rhoi", rhoi
+!write(*,*) "Inflow  ", inflow
+!write(*,*) "Deltat  ", dt
+!write(*,*) "Mu      ", mu
+!write(*,*) "Rho     ", rho
+!write(*,*) "f1,f2,f3,k0", f1,f2,f3,k0
+!write(*,*) "Radius  ", radius
+!write(*,*) "Sigma   ", sigma
+!write(*,*) "Eps     ", eps
+!write(*,*) "Lx      ", lx
+!write(*,*) "dx", dx
+!write(*,*) "dxi", dxi
+!write(*,*) "ddxi", ddxi
+!write(*,*) "rhoi", rhoi
 
 
 end subroutine
