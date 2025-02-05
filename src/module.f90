@@ -1,7 +1,12 @@
 module param
     integer, parameter :: nx=128
     integer, parameter :: np=100
-    double precision :: lx,dx,dt,pi
+    double precision :: pi,lx,dx,dxi,ddxi,rhoi
+    integer :: restart,tstart,tfin,dump
+    double precision :: dt,mu,rho !flow parameters
+    integer :: inflow
+    double precision :: f1,f2,f3,k0 ! forcing parameters
+    double precision :: radius, sigma, eps ! phase-field parameters
 end module param
 
 
@@ -24,7 +29,6 @@ module velocity
    double precision, allocatable :: u(:,:,:), v(:,:,:), w(:,:,:)
    double precision, allocatable :: ustar(:,:,:), vstar(:,:,:), wstar(:,:,:)
    double precision, allocatable :: rhsu(:,:,:), rhsv(:,:,:), rhsw(:,:,:)
-   double precision, allocatable :: fx(:,:,:), fy(:,:,:), fz(:,:,:)
 end module velocity
 
 

@@ -1,15 +1,13 @@
 program mhit
 ! A. Roccon 08/02/2024
-! Homogenous isotropic turbulence solver
+! Homogenous isotropic turbulence solver + phase-field
 ! Constant density and viscosity
 ! 2nd order finite difference + fastPoisson3D solver for pressure 
 ! ABC forcing scheme (see Comparison of forcing schemes to sustain
 ! homogeneous isotropic turbulence)
-! Must be validated, qualitative results seems fine
 ! Runs on Nvidia GPU (cuFFT), FFTW to be implemented 
 ! Eulero explicit in time (to be ubgraded to AB for NS)
 
-use ieee_arithmetic
 use openacc
 use fastp
 use param
@@ -22,59 +20,33 @@ use particles
 #define openaccflag 1
 
 implicit none
-double precision :: dxi,ddxi
-double precision :: rho,mu,rhoi
-double precision :: pos,radius,sigma,eps,gamma,umax,normod
-double precision :: f1,f2,f3,k0
-double precision :: tstart,tend
-double precision :: uc,vc,wc
-double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou
-integer :: tfin,i,j,k,t,im,jm,km,ip,jp,kp,dump,inflow
-double precision :: x(nx)
+double precision :: pos,gamma,umax,normod,uc,vc,wc !only used in main for temp variables
+double precision :: timef,times ! timers for elapsed time
+double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou !for advective terms in NS
+integer :: i,j,k,t,im,jm,km,ip,jp,kp ! loop index and + and - positions
+double precision :: x(nx) ! axis location (same for x,y an z)
 
-
+!assign the code to one GPU
 call acc_set_device_num(1,acc_device_nvidia)
 
-! initialize parameters
-tfin=300000
-dump=10000
-inflow=0
-dt=0.0002d0
-pi=4.d0*datan(1.d0)
-lx=2.d0*pi
-dx=lx/(dble(nx)-1)
-dxi=1.d0/dx
-ddxi=1.d0/dx/dx
-rho=1.d0
-rhoi=1.d0/rho
-mu=0.006d0
-radius=1.0d0
-sigma=0.3d0
-eps=dx
-! forcing parameters (ABC)
-f1=1.d0
-f2=1.d0
-f3=1.d0
-k0=2.d0
-
+!read parameters and compute pre-defined constant
+call readinput
 
 !allocate variables
 !NS variables
-allocate(u(nx,nx,nx),v(nx,nx,nx),w(nx,nx,nx))
-allocate(p(nx,nx,nx),rhsp(nx,nx,nx))
-allocate(pc(nx/2+1,nx,nx),rhspc(nx/2+1,nx,nx))
-allocate(ustar(nx,nx,nx),vstar(nx,nx,nx),wstar(nx,nx,nx))
-allocate(rhsu(nx,nx,nx),rhsv(nx,nx,nx),rhsw(nx,nx,nx))
-!allocate(fx(nx,nx,nx),fy(nx,nx,nx),fz(nx,nx,nx),div(nx,nx,nx))
-!allocate(div(nx,nx,nx))
-allocate(delsq(nx,nx,nx))
-allocate(kk(nx))!,kx(nx,nx,nx),ky(nx,nx,nx),kz(nx,nx,nx))
+allocate(u(nx,nx,nx),v(nx,nx,nx),w(nx,nx,nx)) !velocity vector
+allocate(p(nx,nx,nx),rhsp(nx,nx,nx))  ! p and rhsp in physical space
+allocate(pc(nx/2+1,nx,nx),rhspc(nx/2+1,nx,nx)) ! p and rhsp in complex space
+allocate(ustar(nx,nx,nx),vstar(nx,nx,nx),wstar(nx,nx,nx)) ! provisional velocity field
+allocate(rhsu(nx,nx,nx),rhsv(nx,nx,nx),rhsw(nx,nx,nx)) ! rhs of u,v and w
+allocate(delsq(nx,nx,nx))  ! can be removed in theory
+allocate(kk(nx))
 !PFM variables
 #if phiflag == 1
 allocate(phi(nx,nx,nx),rhsphi(nx,nx,nx))
 allocate(normx(nx,nx,nx),normy(nx,nx,nx),normz(nx,nx,nx))
 allocate(curv(nx,nx,nx),gradphix(nx,nx,nx),gradphiy(nx,nx,nx),gradphiz(nx,nx,nx))
-allocate(fxst(nx,nx,nx),fyst(nx,nx,nx),fzst(nx,nx,nx))
+allocate(fxst(nx,nx,nx),fyst(nx,nx,nx),fzst(nx,nx,nx)) ! surface tension forces
 #endif
 !particles arrays
 #if partflag == 1
@@ -86,42 +58,61 @@ do i=2,nx
     x(i)=x(i-1)+dx
 enddo    
 
-write(*,*) "Initialize velocity field"
-if (inflow .eq. 0) then
-    write(*,*) "Initialize Taylor-green"
-    do k = 1,nx
-        do j= 1,nx
-            do i = 1,nx
-                u(i,j,k) =  sin(x(i))*cos(x(j))*cos(x(k))
-                v(i,j,k) =  cos(x(i))*sin(x(j))*cos(x(k))
-                w(i,j,k) =  0.d0
+!initialize velocity field
+if (restart .eq. 0) then !fresh start Taylor Green or read from file in init folder
+write(*,*) "Initialize velocity field (fresh start)"
+    if (inflow .eq. 0) then
+        write(*,*) "Initialize Taylor-green"
+        do k = 1,nx
+            do j= 1,nx
+                do i = 1,nx
+                    u(i,j,k) =   sin(x(i))*cos(x(j))*cos(x(k))
+                    v(i,j,k) =  -cos(x(i))*sin(x(j))*cos(x(k))
+                    w(i,j,k) =  0.d0
+                enddo
             enddo
-         enddo
-    enddo
+        enddo
+    endif
+    if (inflow .eq. 1) then
+        write(*,*) "Initialize frow data"
+        call readfield(t,1)
+        call readfield(t,2)
+        call readfield(t,3)
+    endif
 endif
-if (inflow .eq. 1) then
-    write(*,*) "Initialize frow data"
-    call readfield(t,1)
-    call readfield(t,2)
-    call readfield(t,3)
+if (restart .eq. 1) then !restart, ignore inflow and read the tstart field 
+    write(*,*) "Initialize velocity field (restart, from output folder), iteration:", tstart
+    call readfield_restart(tstart,1)
+    call readfield_restart(tstart,2)
+    call readfield_restart(tstart,3)
 endif
 
 
+! check on velocity field (also used to compute gamma at first iteration)
 uc=maxval(u)
 vc=maxval(v)
 wc=maxval(w)
 umax=max(wc,max(uc,vc))
-write(*,*) "umax", umax
+cou=umax*dt*dxi
+write(*,*) "Courant number:",cou
+
+! initialize phase-field
 #if phiflag == 1
-write(*,*) 'Initialize phase field'
-do k = 1,nx
-    do j= 1,nx
-        do i = 1,nx
-            pos=(x(i)-lx/2)**2d0 +  (x(j)-lx/2)**2d0 + (x(k)-lx/2)**2d0
-            phi(i,j,k) = 0.5d0*(1.d0-tanh((sqrt(pos)-radius)/2/eps))
-       enddo
+if (restart .eq. 0) then
+    write(*,*) 'Initialize phase field (fresh start)'
+    do k = 1,nx
+        do j= 1,nx
+            do i = 1,nx
+                pos=(x(i)-lx/2)**2d0 +  (x(j)-lx/2)**2d0 + (x(k)-lx/2)**2d0
+                phi(i,j,k) = 0.5d0*(1.d0-tanh((sqrt(pos)-radius)/2/eps))
+            enddo
+        enddo
     enddo
-enddo
+endif
+if (restart .eq. 1) then
+    write(*,*) "Initialize phase-field (restart, from output folder), iteration:", tstart
+    call readfield_restart(tstart,5)
+endif
 #endif
 
 #if partflag == 1
@@ -133,28 +124,25 @@ xp=xp*lx
 !initialize the plan for cuFFT
 call init_cufft
 
-!Save initial fields
-t=0
-call writefield(t,1)
-call writefield(t,2)
-call writefield(t,3)
-call writefield(t,4)
-#if phiflag == 1
-call writefield(t,5)
-#endif
-#if partflag == 1 
-call writepart(t)
-#endif
+!Save initial fields (only if a fresh start)
+if (restart .eq. 0) then
+    call writefield(tstart,1)
+    call writefield(tstart,2)
+    call writefield(tstart,3)
+    call writefield(tstart,4)
+    #if phiflag == 1
+    call writefield(tstart,5)
+    #endif
+    #if partflag == 1 
+    call writepart(tstart)
+    #endif
+endif
 
-!use later for FFT (no need to load them afterwards)
-!!!$acc enter data create(p,pc)
-!!!$acc enter data create(rhsp,rhspc)
-
-
+tstart=tstart+1
 ! Start temporal loop
-do t=1,tfin
+do t=tstart,tfin
 
-    call cpu_time(tstart)
+    call cpu_time(times)
     write(*,*) "Time step",t,"of",tfin
 
 
@@ -162,9 +150,9 @@ do t=1,tfin
     ! Compute convective term (A)
     #if phiflag == 1
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -187,9 +175,9 @@ do t=1,tfin
 
     !Compute diffusive term 
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -213,9 +201,9 @@ do t=1,tfin
     !Compute Sharpening term
     ! Step 1: Compute gradients
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -238,9 +226,9 @@ do t=1,tfin
 
     ! Step 2: Compute normals (1.e-16 is a numerical tolerance)
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 normod = 1.d0/(sqrt(normx(i,j,k)**2d0 + normy(i,j,k)**2d0 + normz(i,j,k)**2d0) + 1.0E-16)
                 normx(i,j,k) = normx(i,j,k)*normod
                 normy(i,j,k) = normy(i,j,k)*normod
@@ -281,9 +269,9 @@ do t=1,tfin
 
     ! Compute new phase field n+1
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 phi(i,j,k) = phi(i,j,k) + dt*rhsphi(i,j,k)
             enddo
         enddo
@@ -396,9 +384,9 @@ do t=1,tfin
     ! Surface tension forces
     #if phiflag == 1
     !$acc kernels
-    do i=1,nx
+    do k=1,nx
         do j=1,nx
-            do k=1,nx
+            do i=1,nx
                 ip=i+1
                 jp=j+1
                 kp=k+1
@@ -426,11 +414,6 @@ do t=1,tfin
     enddo
     !$acc end kernels
     #endif
-
-    !write(*,*) "rhsu", maxval(rhsu)
-    !write(*,*) "rhsv", maxval(rhsv)
-    !write(*,*) "rhsw", maxval(rhsw)
-
 
     ! find u, v and w star (explicit Eulero)
     !$acc kernels
@@ -464,12 +447,8 @@ do t=1,tfin
     enddo
     !$acc end kernels
 
-
-
     ! call Poisson solver (3DFastPoissons + periodic BCs)
     call poissonfast
-
-    !write(*,*) "maxp", maxval(p)
 
     ! Correct velocity 
    !$acc kernels 
@@ -523,29 +502,33 @@ do t=1,tfin
     vc=maxval(v)
     wc=maxval(w)
     umax=max(wc,max(uc,vc))
-    cou=umax*dt*dxi
-
     !$acc end kernels
+
+
+    cou=umax*dt*dxi
     write(*,*) "Courant number             ", cou
-    if (ieee_is_nan(cou)) stop "CFL is Nan -> stop, stop, stop"
+    if (cou .gt. 7) stop "Unstable -> stop, stop, stop"
 
-    call cpu_time(tend)
-    print '(" Time elapsed = ",f6.1," ms")',1000*(tend-tstart)
+    call cpu_time(timef)
+    print '(" Time elapsed = ",f6.1," ms")',1000*(timef-times)
 
-     !output fields
-     if (mod(t,dump) .eq. 0) then
+    !output fields
+    if (mod(t,dump) .eq. 0) then
         write(*,*) "Saving output files"
-	call writefield(t,1)
-	call writefield(t,2)
-	call writefield(t,3)
-        call writefield(t,4)
-	#if phiflag == 1
-	call writefield(t,5)
+            ! write velocity and pressure fiels (1-4)
+	        call writefield(t,1)
+	        call writefield(t,2)
+	        call writefield(t,3)
+            call writefield(t,4)
+	    #if phiflag == 1
+            ! write phase-field (5)
+	        call writefield(t,5)
         #endif
         #if partflag == 1 
-        call writepart(t)
+            ! write particles
+            call writepart(t)
         #endif
-     endif
+    endif
 
 enddo
 
