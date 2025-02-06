@@ -179,6 +179,24 @@ Periodicity is implicitly applied as shown in figure~2.
 \end{figure}
 
 
+\section{Code structure and programming}
+Code can exploit a single GPU using openACC and managed memory feature.
+Arrays for FFT are pinned so to exploit maximum bandwidth between CPU and GPU.
+Possible improvement can be obtained profiling the code using Nvidia Nsight.
+
+Possibilty to go multiGPU using the cuDecomp library? the library should be able to deal with halo exchanges (of any dimension) plus transposition.
+The only doubt is about the openACC compatibility and managed memory feature.
+
+\subsection{Input file}
+An input.dat file is present in the src folder. 
+This file can be used to set the parameters and also change/disable the forcing.
+
+\subsection{Restart of a simulation}
+To restart a simulation, you need to modify the input.dat solely.
+If the restart option is set equal to 1, the code will look for the corresponding iteration number file (itstart) in the src/output folder.
+There are no ad-hoc restart files; this is to simplify the management of the simulation files and avoid too much I/O operations.
+If restart is equal to 1, the subroutine readfield\_restart will be called instead of the readfields, which only read file from the src/init folder which have the generic name (u.dat, etc.).
+Same apply when phase-field is present. 
 
 \section{HIT fundamentals}
 
