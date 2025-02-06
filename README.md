@@ -43,11 +43,11 @@ Max resolution tested:
 * Unix + nvfortran 
 
 #### To run a simulation:
-* go to src folder and run ./go.sh
+* go to src folder and run ./compile_local.sh (if you have one GPU, UNIX system) or ./compile_Leo.sh to run on Leondaro supercomputer.
 
 #### Parallelization strategy
 * The code is serial and exploit a single GPU (GPU-resident)
 
 #### Output files.
-* Files containing the Eulerian fields (u\_\*\*\*,v\_\*\*\*\*,w\_\*\*\*\*  etc.) and the particle positions (xp\_\*\*\*) are stored in src/output
+* Files containing the Eulerian fields (u\_\*\*\*, v\_\*\*\*\*, w\_\*\*\*\*, p\_\*\*\*\* and phi\_\*\*\*\*) and the particle positions (xp\_\*\*\*) are stored in src/output
 
