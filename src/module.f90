@@ -7,6 +7,7 @@ module param
     integer :: inflow
     double precision :: f1,f2,f3,k0 ! forcing parameters
     double precision :: radius, sigma, eps ! phase-field parameters
+    double precision :: alpha, beta ! time integration: Euler/AB2
 end module param
 
 
@@ -29,6 +30,7 @@ module velocity
    double precision, allocatable :: u(:,:,:), v(:,:,:), w(:,:,:)
    double precision, allocatable :: ustar(:,:,:), vstar(:,:,:), wstar(:,:,:)
    double precision, allocatable :: rhsu(:,:,:), rhsv(:,:,:), rhsw(:,:,:)
+   double precision, allocatable :: rhsu_o(:,:,:), rhsv_o(:,:,:), rhsw_o(:,:,:) ! for AB2
 end module velocity
 
 

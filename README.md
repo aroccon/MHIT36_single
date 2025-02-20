@@ -22,10 +22,10 @@ Current capabiltiies:
 * Paraview files for particles
 * Phase-field method (not yet validated)
 * Surface tension forces (not yet validated)
+* Euler/AB2 for time integration (default AB2)
 
 Future developments:
 * Tracking of inertial particles
-* Improve integration of NS (from EE to AB2)
 * FFTW for CPU debug run 
 
 Performance (NS only)
