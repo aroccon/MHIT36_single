@@ -39,6 +39,7 @@ allocate(p(nx,nx,nx),rhsp(nx,nx,nx))  ! p and rhsp in physical space
 allocate(pc(nx/2+1,nx,nx),rhspc(nx/2+1,nx,nx)) ! p and rhsp in complex space
 allocate(ustar(nx,nx,nx),vstar(nx,nx,nx),wstar(nx,nx,nx)) ! provisional velocity field
 allocate(rhsu(nx,nx,nx),rhsv(nx,nx,nx),rhsw(nx,nx,nx)) ! rhs of u,v and w
+allocate(rhsu_o(nx,nx,nx),rhsv_o(nx,nx,nx),rhsw_o(nx,nx,nx)) ! rhs of u,v and w at time n-1
 allocate(delsq(nx,nx,nx))  ! can be removed in theory
 allocate(kk(nx))
 !PFM variables
@@ -141,6 +142,9 @@ if (restart .eq. 0) then
 endif
 
 tstart=tstart+1
+! First step use Euler and then move to AB2 
+alpha=1.0d0
+beta=0.0d0
 ! Start temporal loop
 do t=tstart,tfin
 
@@ -422,13 +426,24 @@ do t=tstart,tfin
     do k=1,nx
         do j=1,nx
             do i=1,nx
-                ustar(i,j,k) = u(i,j,k) + dt*rhsu(i,j,k)
-                vstar(i,j,k) = v(i,j,k) + dt*rhsv(i,j,k)
-                wstar(i,j,k) = w(i,j,k) + dt*rhsw(i,j,k)
+                ustar(i,j,k) = u(i,j,k) + dt*(alpha*rhsu(i,j,k)-beta*rhsu_o(i,j,k))
+                vstar(i,j,k) = v(i,j,k) + dt*(alpha*rhsv(i,j,k)-beta*rhsv_o(i,j,k))
+                wstar(i,j,k) = w(i,j,k) + dt*(alpha*rhsw(i,j,k)-beta*rhsw_o(i,j,k))
             enddo
         enddo
     enddo
     !$acc end kernels
+
+    ! store rhs* in rhs*_o 
+    ! After first step move to AB2 
+    !$acc kernels
+    alpha=1.5d0
+    beta= 0.5d0
+    rhsu_o=rhsu
+    rhsv_o=rhsv
+    rhsw_o=rhsw
+    !$acc end kernels
+
 
     ! Compute rhs of Poisson equation div*ustar: divergence at the cell center 
     !$acc kernels
@@ -441,7 +456,7 @@ do t=tstart,tfin
                 if (ip > nx) ip=1
                 if (jp > nx) jp=1
                 if (kp > nx) kp=1
-                rhsp(i,j,k) = (rho*dxi/dt)*(ustar(ip,j,k)-ustar(i,j,k))
+                rhsp(i,j,k) =               (rho*dxi/dt)*(ustar(ip,j,k)-ustar(i,j,k))
                 rhsp(i,j,k) = rhsp(i,j,k) + (rho*dxi/dt)*(vstar(i,jp,k)-vstar(i,j,k))
                 rhsp(i,j,k) = rhsp(i,j,k) + (rho*dxi/dt)*(wstar(i,j,kp)-wstar(i,j,k))
             enddo
@@ -541,6 +556,7 @@ deallocate(u,v,w)
 deallocate(p,pc,rhsp,rhspc)
 deallocate(ustar,vstar,wstar)
 deallocate(rhsu,rhsv,rhsw)
+deallocate(rhsu_o,rhsv_o,rhsw_o)
 !PFM variables
 #if phiflag==1
 deallocate(phi,rhsphi,normx,normy,normz)
