@@ -22,7 +22,7 @@ use particles
 implicit none
 double precision :: pos,gamma,umax,normod,uc,vc,wc !only used in main for temp variables
 double precision :: timef,times ! timers for elapsed time
-double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou !for advective terms in NS
+double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou,umean,vmean,wmean !for advective terms in NS
 integer :: i,j,k,t,im,jm,km,ip,jp,kp ! loop index and + and - positions
 double precision :: x(nx) ! axis location (same for x,y an z)
 
@@ -34,6 +34,7 @@ call readinput
 
 !allocate variables
 !NS variables
+allocate(div(nx,nx,nx))
 allocate(u(nx,nx,nx),v(nx,nx,nx),w(nx,nx,nx)) !velocity vector
 allocate(p(nx,nx,nx),rhsp(nx,nx,nx))  ! p and rhsp in physical space
 allocate(pc(nx/2+1,nx,nx),rhspc(nx/2+1,nx,nx)) ! p and rhsp in complex space
@@ -504,6 +505,18 @@ do t=tstart,tfin
     !!$acc end kernels
 
     !write(*,*) "maxdiv", maxval(div)
+
+     ! remove mean velocity
+    !$acc kernels
+    umean=sum(u)/nx/nx/nx
+    vmean=sum(v)/nx/nx/nx
+    wmean=sum(w)/nx/nx/nx
+    u=u-umean
+    v=v-vmean
+    w=w-wmean
+    !$acc end kernels 
+
+     write(*,*) "umean",umean
 
     ! Advance particles (get velocity and advance according to particle type)
     #if partflag==1
