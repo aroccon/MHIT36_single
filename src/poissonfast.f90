@@ -43,6 +43,7 @@ do i=1,nx/2+1
 enddo
 !$acc end kernels
 
+pc(1,1,1)=0.d0
 !!$acc data copyin(pc) copyout(p)
 !$acc host_data use_device(pc,p)
 gerr = gerr + cufftExecZ2D(cudaplan_bwd,pc,p)
