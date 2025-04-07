@@ -181,6 +181,7 @@ do t=tstart,tfin
     enddo
     !$acc end kernels
 
+    gamma=1.d0*umax
     !Compute diffusive term 
     !$acc kernels
     do k=1,nx
@@ -259,7 +260,6 @@ do t=tstart,tfin
 
     ! Compute sharpening term
     !$acc kernels
-    gamma=1.d0*umax
     do k=1,nx
         do j=1,nx
             do i=1,nx
@@ -275,7 +275,7 @@ do t=tstart,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                rhsphi(i,j,k)=rhsphi(i,j,k) -gamma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
+                rhsphi(i,j,k)=rhsphi(i,j,k) - gamma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
                                                      (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,jm,k)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
                                                      (0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,kp)*epsi))**2)*normz(i,j,kp)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,km)*epsi))**2)*normz(i,j,km))*0.5*dxi)
             enddo
