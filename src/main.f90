@@ -574,7 +574,7 @@ enddo
 !deallocate
 !NS variables
 deallocate(u,v,w)
-deallocate(p,pc,rhsp,rhspc)
+deallocate(p,pc,rhsp)
 deallocate(ustar,vstar,wstar)
 deallocate(rhsu,rhsv,rhsw)
 deallocate(rhsu_o,rhsv_o,rhsw_o)
