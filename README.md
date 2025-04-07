@@ -21,7 +21,7 @@ Current capabiltiies:
 * Phase-field method (ACDI method)
 * Tracking of tracers
 * Paraview files for particles
-* Surface tension forces (not yet validated)
+* Surface tension forces 
 * Euler/AB2 for time integration (default AB2)
 
 Future developments:
@@ -34,6 +34,9 @@ Performance (NS only)
 * 128 x 128 x 128 | A100@Leonardo  |   5 ms/timestep
 * 256 x 256 x 256 | A100@Leonardo  |  40 ms/timestep
 * 512 x 512 x 512 | A100@Leonardo  | 320 ms/timestep
+
+Performance (NS + PFM)
+* 128 x 128 x 128 | RTX5000@milton |  30 ms/timestep
 
 Max resolution tested:
 * 256 x 256 x 256 | RTX5000@milton - 16 GB VRAM

@@ -21,7 +21,7 @@ module fastp
     double precision, allocatable :: kx(:,:,:), ky(:,:,:), kz(:,:,:)
     real(c_double), pinned, allocatable :: p(:,:,:), rhsp(:,:,:)
     complex(c_double_complex), pinned, allocatable :: pc(:,:,:)
-    complex(c_double_complex), pinned, allocatable :: rhspc(:,:,:)
+    !complex(c_double_complex), pinned, allocatable :: rhspc(:,:,:)
 end module fastp
 
 

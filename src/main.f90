@@ -37,8 +37,8 @@ call readinput
 allocate(div(nx,nx,nx))
 allocate(u(nx,nx,nx),v(nx,nx,nx),w(nx,nx,nx)) !velocity vector
 allocate(p(nx,nx,nx),rhsp(nx,nx,nx))  ! p and rhsp in physical space
-allocate(pc(nx/2+1,nx,nx),rhspc(nx/2+1,nx,nx)) ! p and rhsp in complex space
-allocate(ustar(nx,nx,nx),vstar(nx,nx,nx),wstar(nx,nx,nx)) ! provisional velocity field
+allocate(pc(nx/2+1,nx,nx)) ! p and rhsp in complex space
+!allocate(ustar(nx,nx,nx),vstar(nx,nx,nx),wstar(nx,nx,nx)) ! provisional velocity field
 allocate(rhsu(nx,nx,nx),rhsv(nx,nx,nx),rhsw(nx,nx,nx)) ! rhs of u,v and w
 allocate(rhsu_o(nx,nx,nx),rhsv_o(nx,nx,nx),rhsw_o(nx,nx,nx)) ! rhs of u,v and w at time n-1
 allocate(delsq(nx,nx,nx))  ! can be removed in theory
@@ -68,8 +68,9 @@ write(*,*) "Initialize velocity field (fresh start)"
         do k = 1,nx
             do j= 1,nx
                 do i = 1,nx
-                    u(i,j,k) =   sin(x(i))*cos(x(j))*cos(x(k))
-                    v(i,j,k) =  -cos(x(i))*sin(x(j))*cos(x(k))
+                    ! evaluate at cell faces, x(nx) is 
+                    u(i,j,k) =   sin(x(i)-dx/2)*cos(x(j))*cos(x(k))
+                    v(i,j,k) =  -cos(x(i))*sin(x(j)-dx/2)*cos(x(k))
                     w(i,j,k) =  0.d0
                 enddo
             enddo
@@ -431,14 +432,14 @@ do t=tstart,tfin
     !$acc end kernels
     #endif
 
-    ! find u, v and w star (explicit Eulero)
+    ! find u, v and w star (AB2), overwrite u,v and w
     !$acc kernels
     do k=1,nx
         do j=1,nx
             do i=1,nx
-                ustar(i,j,k) = u(i,j,k) + dt*(alpha*rhsu(i,j,k)-beta*rhsu_o(i,j,k))
-                vstar(i,j,k) = v(i,j,k) + dt*(alpha*rhsv(i,j,k)-beta*rhsv_o(i,j,k))
-                wstar(i,j,k) = w(i,j,k) + dt*(alpha*rhsw(i,j,k)-beta*rhsw_o(i,j,k))
+                u(i,j,k) = u(i,j,k) + dt*(alpha*rhsu(i,j,k)-beta*rhsu_o(i,j,k))
+                v(i,j,k) = v(i,j,k) + dt*(alpha*rhsv(i,j,k)-beta*rhsv_o(i,j,k))
+                w(i,j,k) = w(i,j,k) + dt*(alpha*rhsw(i,j,k)-beta*rhsw_o(i,j,k))
             enddo
         enddo
     enddo
@@ -466,9 +467,9 @@ do t=tstart,tfin
                 if (ip > nx) ip=1
                 if (jp > nx) jp=1
                 if (kp > nx) kp=1
-                rhsp(i,j,k) =               (rho*dxi/dt)*(ustar(ip,j,k)-ustar(i,j,k))
-                rhsp(i,j,k) = rhsp(i,j,k) + (rho*dxi/dt)*(vstar(i,jp,k)-vstar(i,j,k))
-                rhsp(i,j,k) = rhsp(i,j,k) + (rho*dxi/dt)*(wstar(i,j,kp)-wstar(i,j,k))
+                rhsp(i,j,k) =               (rho*dxi/dt)*(u(ip,j,k)-u(i,j,k))
+                rhsp(i,j,k) = rhsp(i,j,k) + (rho*dxi/dt)*(v(i,jp,k)-v(i,j,k))
+                rhsp(i,j,k) = rhsp(i,j,k) + (rho*dxi/dt)*(w(i,j,kp)-w(i,j,k))
             enddo
         enddo
     enddo
@@ -488,9 +489,9 @@ do t=tstart,tfin
                 if (im < 1) im=nx
                 if (jm < 1) jm=nx
                 if (km < 1) km=nx   
-                u(i,j,k)=ustar(i,j,k) - dt/rho*(p(i,j,k)-p(im,j,k))*dxi
-                v(i,j,k)=vstar(i,j,k) - dt/rho*(p(i,j,k)-p(i,jm,k))*dxi
-                w(i,j,k)=wstar(i,j,k) - dt/rho*(p(i,j,k)-p(i,j,km))*dxi
+                u(i,j,k)=u(i,j,k) - dt/rho*(p(i,j,k)-p(im,j,k))*dxi
+                v(i,j,k)=v(i,j,k) - dt/rho*(p(i,j,k)-p(i,jm,k))*dxi
+                w(i,j,k)=w(i,j,k) - dt/rho*(p(i,j,k)-p(i,j,km))*dxi
             enddo
         enddo
     enddo
