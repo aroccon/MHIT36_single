@@ -17,10 +17,10 @@ Tested on:
 * Leonardo (1 x A100)
 
 Current capabiltiies:
-* DNS of single-phase flow (validated in turbulence)
+* DNS of single-phase flow
+* Phase-field method (ACDI method)
 * Tracking of tracers
 * Paraview files for particles
-* Phase-field method (not yet validated)
 * Surface tension forces (not yet validated)
 * Euler/AB2 for time integration (default AB2)
 

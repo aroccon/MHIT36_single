@@ -279,9 +279,9 @@ do t=tstart,tfin
                 !                                   ((phi(i,jp,k)**2d0-phi(i,jp,k))*normy(i,jp,k)-(phi(i,jm,k)**2d0-phi(i,jm,k))*normy(i,jm,k))*0.5d0*dxi + &
                 !                                   ((phi(i,j,kp)**2d0-phi(i,j,kp))*normz(i,j,kp)-(phi(i,j,km)**2d0-phi(i,j,km))*normz(i,j,km))*0.5d0*dxi)
                 ! NEW -- ACDI
-                rhsphi(i,j,k)=rhsphi(i,j,k) -gammma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1d0-(tanh(0.5d0*psi(im,j,k,3)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
-                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1d0-(tanh(0.5d0*psi(i,jm,k,3)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
-                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,kp)*epsi))**2)*normz(i,j,kp)- 0.25d0*(1d0-(tanh(0.5d0*psi(i,j,km,3)*epsi))**2)*normz(i,j,km))*0.5*dxi)
+                rhsphi(i,j,k)=rhsphi(i,j,k) -gammma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k,3)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
+                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,jm,k,3)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
+                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,kp)*epsi))**2)*normz(i,j,kp)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,km,3)*epsi))**2)*normz(i,j,km))*0.5*dxi)
             enddo
         enddo
     enddo
