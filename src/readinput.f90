@@ -27,7 +27,7 @@ read(55,*) k0
 ! phase-field parameters
 read(55,*) radius
 read(55,*) sigma
-read(55,*) eps   
+read(55,*) epsr   
 
 
 ! compute pre-defined constant 
@@ -37,6 +37,8 @@ dx=lx/(dble(nx)-1)
 dxi=1.d0/dx
 ddxi=1.d0/dx/dx
 rhoi=1.d0/rho
+eps=epsr*dx
+epsi=1.d0/eps
 
 !enable/disable for debug check parameters
 write(*,*) "----------------------------------------------"

@@ -45,7 +45,7 @@ allocate(delsq(nx,nx,nx))  ! can be removed in theory
 allocate(kk(nx))
 !PFM variables
 #if phiflag == 1
-allocate(phi(nx,nx,nx),rhsphi(nx,nx,nx))
+allocate(phi(nx,nx,nx),rhsphi(nx,nx,nx),psi(nx,nx,nx))
 allocate(normx(nx,nx,nx),normy(nx,nx,nx),normz(nx,nx,nx))
 allocate(curv(nx,nx,nx),gradphix(nx,nx,nx),gradphiy(nx,nx,nx),gradphiz(nx,nx,nx))
 allocate(fxst(nx,nx,nx),fyst(nx,nx,nx),fzst(nx,nx,nx)) ! surface tension forces
@@ -198,12 +198,23 @@ do t=tstart,tfin
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
                 rhsphi(i,j,k)=rhsphi(i,j,k)+gamma*(eps*(phi(ip,j,k)-2.d0*phi(i,j,k)+phi(im,j,k))*ddxi + &
-                                                    eps*(phi(i,jp,k)-2.d0*phi(i,j,k)+phi(i,jm,k))*ddxi + &         
-                                                    eps*(phi(i,j,kp)-2.d0*phi(i,j,k)+phi(i,j,km))*ddxi)
+                                                   eps*(phi(i,jp,k)-2.d0*phi(i,j,k)+phi(i,jm,k))*ddxi + &         
+                                                   eps*(phi(i,j,kp)-2.d0*phi(i,j,k)+phi(i,j,km))*ddxi)
             enddo
         enddo
     enddo
-   !$acc end kernels
+    !$acc end kernels
+
+    ! compute distance function psi (used to compute normals)
+    !$acc kernels
+    do k=1,nx
+        do j=1,nx
+            do i=1,nx
+                psi(i,j,k) = eps*log((phi(i,j,k)+enum)/(1.d0-phi(i,j,k)+enum))
+            enddo
+        enddo
+    enddo
+    !$acc end kernels
 
     !Compute Sharpening term
     ! Step 1: Compute gradients
@@ -223,9 +234,9 @@ do t=tstart,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                normx(i,j,k) = (phi(ip,j,k) - phi(im,j,k))
-                normy(i,j,k) = (phi(i,jp,k) - phi(i,jm,k))
-                normz(i,j,k) = (phi(i,j,kp) - phi(i,j,km)) 
+                normx(i,j,k) = (psi(ip,j,k) - psi(im,j,k))
+                normy(i,j,k) = (psi(i,jp,k) - psi(i,jm,k))
+                normz(i,j,k) = (psi(i,j,kp) - psi(i,j,km)) 
             enddo
         enddo
     enddo 
@@ -245,8 +256,6 @@ do t=tstart,tfin
     enddo
     !$acc end kernels
 
-    !write(*,*) "umax", umax
-
     ! Compute sharpening term
     !$acc kernels
     gamma=1.d0*umax
@@ -265,9 +274,14 @@ do t=tstart,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                rhsphi(i,j,k)=rhsphi(i,j,k)+gamma*(((phi(ip,j,k)**2d0-phi(ip,j,k))*normx(ip,j,k)-(phi(im,j,k)**2d0-phi(im,j,k))*normx(im,j,k))*0.5d0*dxi + &
-                                                   ((phi(i,jp,k)**2d0-phi(i,jp,k))*normy(i,jp,k)-(phi(i,jm,k)**2d0-phi(i,jm,k))*normy(i,jm,k))*0.5d0*dxi + &
-                                                   ((phi(i,j,kp)**2d0-phi(i,j,kp))*normz(i,j,kp)-(phi(i,j,km)**2d0-phi(i,j,km))*normz(i,j,km))*0.5d0*dxi)
+                ! OLD -- CDI
+                !rhsphi(i,j,k)=rhsphi(i,j,k)+gamma*(((phi(ip,j,k)**2d0-phi(ip,j,k))*normx(ip,j,k)-(phi(im,j,k)**2d0-phi(im,j,k))*normx(im,j,k))*0.5d0*dxi + &
+                !                                   ((phi(i,jp,k)**2d0-phi(i,jp,k))*normy(i,jp,k)-(phi(i,jm,k)**2d0-phi(i,jm,k))*normy(i,jm,k))*0.5d0*dxi + &
+                !                                   ((phi(i,j,kp)**2d0-phi(i,j,kp))*normz(i,j,kp)-(phi(i,j,km)**2d0-phi(i,j,km))*normz(i,j,km))*0.5d0*dxi)
+                ! NEW -- ACDI
+                rhsphi(i,j,k)=rhsphi(i,j,k) -gammma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1d0-(tanh(0.5d0*psi(im,j,k,3)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
+                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1d0-(tanh(0.5d0*psi(i,jm,k,3)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
+                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,kp)*epsi))**2)*normz(i,j,kp)- 0.25d0*(1d0-(tanh(0.5d0*psi(i,j,km,3)*epsi))**2)*normz(i,j,km))*0.5*dxi)
             enddo
         enddo
     enddo
