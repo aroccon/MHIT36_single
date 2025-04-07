@@ -1,12 +1,12 @@
 program mhit
 ! A. Roccon 08/02/2024
-! Homogenous isotropic turbulence solver + phase-field
+! Homogenous isotropic turbulence solver + phase-field (ACDI)
 ! Constant density and viscosity
 ! 2nd order finite difference + fastPoisson3D solver for pressure 
-! ABC forcing scheme (see Comparison of forcing schemes to sustain
+! ABC or TG forcing scheme (see Comparison of forcing schemes to sustain
 ! homogeneous isotropic turbulence)
 ! Runs on Nvidia GPU (cuFFT), FFTW to be implemented 
-! Eulero explicit in time (to be ubgraded to AB for NS)
+! AB2 for NS + Euler explicit for ACDI
 
 use openacc
 use fastp
@@ -274,7 +274,7 @@ do t=tstart,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                rhsphi(i,j,k)=rhsphi(i,j,k) -gammma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
+                rhsphi(i,j,k)=rhsphi(i,j,k) -gamma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
                                                      (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,jm,k)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
                                                      (0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,kp)*epsi))**2)*normz(i,j,kp)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,km)*epsi))**2)*normz(i,j,km))*0.5*dxi)
             enddo
