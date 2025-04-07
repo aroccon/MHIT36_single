@@ -15,7 +15,7 @@ use velocity
 use phase
 use particles
 
-#define phiflag 0
+#define phiflag 1
 #define partflag 0
 #define openaccflag 1
 
@@ -274,14 +274,9 @@ do t=tstart,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                ! OLD -- CDI
-                !rhsphi(i,j,k)=rhsphi(i,j,k)+gamma*(((phi(ip,j,k)**2d0-phi(ip,j,k))*normx(ip,j,k)-(phi(im,j,k)**2d0-phi(im,j,k))*normx(im,j,k))*0.5d0*dxi + &
-                !                                   ((phi(i,jp,k)**2d0-phi(i,jp,k))*normy(i,jp,k)-(phi(i,jm,k)**2d0-phi(i,jm,k))*normy(i,jm,k))*0.5d0*dxi + &
-                !                                   ((phi(i,j,kp)**2d0-phi(i,j,kp))*normz(i,j,kp)-(phi(i,j,km)**2d0-phi(i,j,km))*normz(i,j,km))*0.5d0*dxi)
-                ! NEW -- ACDI
-                rhsphi(i,j,k)=rhsphi(i,j,k) -gammma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k,3)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
-                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,jm,k,3)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
-                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,kp)*epsi))**2)*normz(i,j,kp)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,km,3)*epsi))**2)*normz(i,j,km))*0.5*dxi)
+                rhsphi(i,j,k)=rhsphi(i,j,k) -gammma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
+                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,jm,k)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
+                                                     (0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,kp)*epsi))**2)*normz(i,j,kp)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,km)*epsi))**2)*normz(i,j,km))*0.5*dxi)
             enddo
         enddo
     enddo
@@ -529,8 +524,6 @@ do t=tstart,tfin
     v=v-vmean
     w=w-wmean
     !$acc end kernels 
-
-     write(*,*) "umean",umean
 
     ! Advance particles (get velocity and advance according to particle type)
     #if partflag==1
