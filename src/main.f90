@@ -212,7 +212,8 @@ do t=tstart,tfin
     do k=1,nx
         do j=1,nx
             do i=1,nx
-                psi(i,j,k) = eps*log((phi(i,j,k)+enum)/(1.d0-phi(i,j,k)+enum))
+                phiaux = min(phi(i,j,k),1.0d0) ! avoid machine precision overshoots in phi that leads to problem with log
+                psi(i,j,k) = eps*log((phiaux+enum)/(1.d0-phiaxu+enum))
             enddo
         enddo
     enddo

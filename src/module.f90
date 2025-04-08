@@ -7,7 +7,7 @@ module param
     integer :: inflow
     double precision :: f1,f2,f3,k0 ! forcing parameters
     double precision :: radius, sigma, epsr, eps, epsi, enum ! phase-field parameters
-    double precision :: alpha, beta ! time integration: Euler/AB2
+    double precision :: alpha, beta, phiaux ! time integration: Euler/AB2
 end module param
 
 
