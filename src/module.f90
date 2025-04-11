@@ -1,5 +1,5 @@
 module param
-    integer, parameter :: nx=128
+    integer, parameter :: nx=512
     integer, parameter :: np=100
     double precision :: pi,lx,dx,dxi,ddxi,rhoi
     integer :: restart,tstart,tfin,dump
@@ -7,7 +7,7 @@ module param
     integer :: inflow
     double precision :: f1,f2,f3,k0 ! forcing parameters
     double precision :: radius, sigma, epsr, eps, epsi, enum ! phase-field parameters
-    double precision :: alpha, beta, phiaux ! time integration: Euler/AB2
+    double precision :: alpha, beta ! time integration: Euler/AB2
 end module param
 
 

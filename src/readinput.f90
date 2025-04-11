@@ -39,7 +39,7 @@ ddxi=1.d0/dx/dx
 rhoi=1.d0/rho
 eps=epsr*dx
 epsi=1.d0/eps
-enum=1.0d-32
+enum=1.0E-16
 
 !enable/disable for debug check parameters
 write(*,*) "----------------------------------------------"
@@ -66,6 +66,8 @@ write(*,*) "Dump    ", dump
 !write(*,*) "dxi", dxi
 !write(*,*) "ddxi", ddxi
 !write(*,*) "rhoi", rhoi
+write(*,*) "eps", eps
+!write(*,*) "epsi", epsi
 
 
 end subroutine

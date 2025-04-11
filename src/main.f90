@@ -15,12 +15,12 @@ use velocity
 use phase
 use particles
 
-#define phiflag 1
+#define phiflag 0
 #define partflag 0
 #define openaccflag 1
 
 implicit none
-double precision :: pos,gamma,umax,normod,uc,vc,wc !only used in main for temp variables
+double precision :: val,pos,gamma,umax,normod,uc,vc,wc !only used in main for temp variables
 double precision :: timef,times ! timers for elapsed time
 double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou,umean,vmean,wmean !for advective terms in NS
 integer :: i,j,k,t,im,jm,km,ip,jp,kp ! loop index and + and - positions
@@ -181,7 +181,8 @@ do t=tstart,tfin
     enddo
     !$acc end kernels
 
-    gamma=1.d0*umax
+    gamma=1.0d0*umax
+    !write(*,*) "gamma", gamma
     !Compute diffusive term 
     !$acc kernels
     do k=1,nx
@@ -212,8 +213,8 @@ do t=tstart,tfin
     do k=1,nx
         do j=1,nx
             do i=1,nx
-                phiaux = min(phi(i,j,k),1.0d0) ! avoid machine precision overshoots in phi that leads to problem with log
-                psi(i,j,k) = eps*log((phiaux+enum)/(1.d0-phiaxu+enum))
+		val=min(phi(i,j,k),1.d0) ! avoid tiny overshots due to Euler integration
+                psi(i,j,k) = eps*dlog((val+enum)/(1.d0-val+enum))
             enddo
         enddo
     enddo
@@ -250,7 +251,7 @@ do t=tstart,tfin
     do k=1,nx
         do j=1,nx
             do i=1,nx
-                normod = 1.d0/(sqrt(normx(i,j,k)**2d0 + normy(i,j,k)**2d0 + normz(i,j,k)**2d0) + 1.0E-16)
+                normod = 1.d0/(sqrt(normx(i,j,k)**2d0 + normy(i,j,k)**2d0 + normz(i,j,k)**2d0) + enum)
                 normx(i,j,k) = normx(i,j,k)*normod
                 normy(i,j,k) = normy(i,j,k)*normod
                 normz(i,j,k) = normz(i,j,k)*normod
@@ -276,6 +277,11 @@ do t=tstart,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
+                ! CDI
+                !rhsphi(i,j,k)=rhsphi(i,j,k)+gamma*(((phi(ip,j,k)**2d0-phi(ip,j,k))*normx(ip,j,k)-(phi(im,j,k)**2d0-phi(im,j,k))*normx(im,j,k))*0.5d0*dxi + &
+                !                                   ((phi(i,jp,k)**2d0-phi(i,jp,k))*normy(i,jp,k)-(phi(i,jm,k)**2d0-phi(i,jm,k))*normy(i,jm,k))*0.5d0*dxi + &
+                !                                   ((phi(i,j,kp)**2d0-phi(i,j,kp))*normz(i,j,kp)-(phi(i,j,km)**2d0-phi(i,j,km))*normz(i,j,km))*0.5d0*dxi)
+                ! ACDI
                 rhsphi(i,j,k)=rhsphi(i,j,k) - gamma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
                                                      (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,jm,k)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
                                                      (0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,kp)*epsi))**2)*normz(i,j,kp)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,j,km)*epsi))**2)*normz(i,j,km))*0.5*dxi)
