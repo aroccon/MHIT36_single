@@ -1,5 +1,5 @@
 module param
-    integer, parameter :: nx=512
+    integer, parameter :: nx=128
     integer, parameter :: np=100
     double precision :: pi,lx,dx,dxi,ddxi,rhoi
     integer :: restart,tstart,tfin,dump

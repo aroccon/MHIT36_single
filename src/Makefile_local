@@ -3,7 +3,7 @@ FC = nvfortran
 
 # Compiler flags
 FFLAGS = -fast -gpu=managed -cuda -acc -cudalib -Mfree -Mpreprocess -mcmodel=medium
-#FFLAGS = -fast -gpu=managed -acc -cudalib -Minfo=accel
+#FFLAGS = -fast -gpu=managed -acc -cudalib 
 
 # Executable name
 EXEC = mhit36
