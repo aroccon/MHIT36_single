@@ -37,7 +37,7 @@ end module velocity
 module phase
    double precision, allocatable :: phi(:,:,:), rhsphi(:,:,:), psi(:,:,:)
    double precision, allocatable :: normx(:,:,:), normy(:,:,:), normz(:,:,:)
-   double precision, allocatable :: curv(:,:,:), gradphix(:,:,:), gradphiy(:,:,:), gradphiz(:,:,:)
+   double precision, allocatable :: chempot(:,:,:), gradphix(:,:,:), gradphiy(:,:,:), gradphiz(:,:,:)
    double precision, allocatable :: fxst(:,:,:), fyst(:,:,:), fzst(:,:,:)
 end module phase
 

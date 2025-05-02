@@ -47,7 +47,7 @@ allocate(kk(nx))
 #if phiflag == 1
 allocate(phi(nx,nx,nx),rhsphi(nx,nx,nx),psi(nx,nx,nx))
 allocate(normx(nx,nx,nx),normy(nx,nx,nx),normz(nx,nx,nx))
-allocate(curv(nx,nx,nx),gradphix(nx,nx,nx),gradphiy(nx,nx,nx),gradphiz(nx,nx,nx))
+allocate(chempot(nx,nx,nx),gradphix(nx,nx,nx),gradphiy(nx,nx,nx),gradphiz(nx,nx,nx))
 allocate(fxst(nx,nx,nx),fyst(nx,nx,nx),fzst(nx,nx,nx)) ! surface tension forces
 #endif
 !particles arrays
@@ -423,13 +423,13 @@ do t=tstart,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                curv(i,j,k)=0.5d0*(normx(ip,j,k)-normx(im,j,k))*dxi+0.5d0*(normy(i,jp,k)-normy(i,jm,k))*dxi+0.5d0*(normz(i,j,kp)-normz(i,j,km))*dxi
+                chempot(i,j,k)=phi(i,j,k)*(1.d0-phi(i,j,k))*(1.d0-2.d0*phi(i,j,k))*epsi-eps*(phi(ip,j,k)+phi(im,j,k)+phi(i,jp,k)+phi(i,jm,k)+phi(i,j,kp)+phi(i,j,km)- 6.d0*phi(i,j,k))*ddxi
                 gradphix(i,j,k)=0.5d0*(phi(ip,j,k)-phi(im,j,k))*dxi
                 gradphiy(i,j,k)=0.5d0*(phi(i,jp,k)-phi(i,jm,k))*dxi
                 gradphiz(i,j,k)=0.5d0*(phi(i,j,kp)-phi(i,j,km))*dxi
-                fxst(i,j,k)=-6.d0*sigma*curv(i,j,k)*gradphix(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
-                fyst(i,j,k)=-6.d0*sigma*curv(i,j,k)*gradphiy(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
-                fzst(i,j,k)=-6.d0*sigma*curv(i,j,k)*gradphiz(i,j,k)*phi(i,j,k)*(1.d0-phi(i,j,k))
+                fxst(i,j,k)=6.d0*sigma*chempot(i,j,k)*gradphix(i,j,k)
+                fyst(i,j,k)=6.d0*sigma*chempot(i,j,k)*gradphiy(i,j,k)
+                fzst(i,j,k)=6.d0*sigma*chempot(i,j,k)*gradphiz(i,j,k)
                 rhsu(i,j,k)=rhsu(i,j,k) + 0.5d0*(fxst(im,j,k)+fxst(i,j,k))*rhoi
                 rhsv(i,j,k)=rhsv(i,j,k) + 0.5d0*(fyst(i,jm,k)+fyst(i,j,k))*rhoi
                 rhsw(i,j,k)=rhsw(i,j,k) + 0.5d0*(fzst(i,j,km)+fzst(i,j,k))*rhoi
