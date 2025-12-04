@@ -12,49 +12,39 @@ double precision :: pm
 ! 3D FFT-based solution of p_xx + p_yy  + p_zz = rhs;
 ! with periodic boundary conditions along all directions
 
-! Laplacian matrix acting on the wavenumbers (in principle required only once)
-!do i=1,nx
-!    do j=1,nx
-!        do k=1,nx
-!            delsq(i,j,k) = -(kk(i)**2d0 + kk(j)**2d0 + kk(k)**2d0)
-!        enddo
-!    enddo
-!enddo
-! Laplacian matrix acting on the wavenumbers
-! Avoids solving for the zero wavenumber
-!delsq(1,1,1) = 1.d0
-!write(*,*) "delsq(30,27,29)", delsq(30,27,29)
 
 !Perform FFT3D forward of the rhsp
-!$acc data copyin(rhsp) copyout(p) create(pc)
 !$acc host_data use_device(rhsp,pc)
 gerr = gerr + cufftExecD2Z(cudaplan_fwd,rhsp,pc)
 !$acc end host_data
-!!$acc end data
 
-!$acc kernels
+!$acc parallel loop collapse(3) present(pc,delsq)
 do i=1,nx/2+1
-    do j=1,nx
-        do k=1,nx
-            pc(i,j,k)=pc(i,j,k)/delsq(i,j,k)
-        enddo
+  do j=1,nx
+    do k=1,nx
+        pc(i,j,k) = pc(i,j,k) / delsq(i,j,k)
     enddo
+  enddo
 enddo
-!$acc end kernels
 
-pc(1,1,1)=0.d0
-!!$acc data copyin(pc) copyout(p)
+!$acc parallel present(pc)
+pc(1,1,1) = 0.d0
+!$acc end parallel
+
 !$acc host_data use_device(pc,p)
 gerr = gerr + cufftExecZ2D(cudaplan_bwd,pc,p)
 !$acc end host_data
-!$acc end data
 
 ! scale p
-!$acc kernels
-p = p / (nx*nx*nx)
-pm=p(1,1,1)
-p = p - pm
-!$acc end kernels
+!$acc parallel loop present(p)
+do k=1,nx
+  do j=1,nx
+    do i=1,nx
+      p(i,j,k) = p(i,j,k) / (nx*nx*nx)
+    enddo
+  enddo
+enddo
+
 
 return
 end subroutine
@@ -72,6 +62,7 @@ use param
 implicit none
 integer :: gerr,i,j,k
 integer(kind=int_ptr_kind()) :: workSize(1)
+double precision :: kx, ky, kz
 
 ! create plans
 ! Creata plans (forth and back)
@@ -97,14 +88,28 @@ do i=nx/2+1,nx
     kk(i)=-nx + i -1
 enddo
 
-!create delsq
 do i=1,nx
+    kx = 2.d0*pi*kk(i)/lx
     do j=1,nx
+        ky = 2.d0*pi*kk(j)/lx
         do k=1,nx
-            delsq(i,j,k) = -(kk(i)**2d0 + kk(j)**2d0 + kk(k)**2d0)
+            kz = 2.d0*pi*kk(k)/lx
+            delsq(i,j,k) = ( 2.d0*(cos(kx*dx) - 1.d0)  + 2.d0*(cos(ky*dx) - 1.d0)    + 2.d0*(cos(kz*dx) - 1.d0) ) / dx**2
         enddo
     enddo
 enddo
+
+
+
+
+!create delsq
+!do i=1,nx
+!    do j=1,nx
+!        do k=1,nx
+!            delsq(i,j,k) = -(kk(i)**2d0 + kk(j)**2d0 + kk(k)**2d0)
+!        enddo
+!    enddo
+!enddo
 
 delsq(1,1,1) = 1.d0
 

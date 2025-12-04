@@ -144,6 +144,10 @@ if (restart .eq. 0) then
     #endif
 endif
 
+!$acc data copy(u,v,w,p,pold) copyin(delsq) create(rhsp,pc,delsq,rhsu,rhsv,rhsw,rhsu_o,rhsv_o,rhsw_o,div)
+#if phiflag == 1
+!$acc copy(phi,psi)   create(rhsphi, normx, normy, normz, chempot, gradphix, gradphiy, gradphiz, fxst, fyst, fzst)
+#endif
 tstart=tstart+1
 ! First step use Euler and then move to AB2 
 alpha=1.0d0
@@ -158,7 +162,7 @@ do t=tstart,tfin
     ! Advance marker function
     ! Compute convective term (A)
     #if phiflag == 1
-    !$acc kernels
+    !$acc kernels 
     do k=1,nx
         do j=1,nx
             do i=1,nx
@@ -303,7 +307,7 @@ do t=tstart,tfin
 
     ! Projection step, convective terms
     !Convective + diffusive + pressure gradients terms NS
-    !$acc kernels
+    !$acc parallel loop collapse(3) present(u,v,w,rhsu,rhsv,rhsw)
     do k=1,nx
         do j=1,nx
             do i=1,nx
@@ -347,9 +351,9 @@ do t=tstart,tfin
                 rhsv(i,j,k)=rhsv(i,j,k)+(h21+h22+h23)*rhoi
                 rhsw(i,j,k)=rhsw(i,j,k)+(h31+h32+h33)*rhoi
                 ! pressure gradient terms (from pold)
-                rhsu(i,j,k)=rhsu(i,j,k) - (pold(i,j,k)-pold(im,j,k))*dxi*rhoi
-                rhsv(i,j,k)=rhsv(i,j,k) - (pold(i,j,k)-pold(i,jm,k))*dxi*rhoi
-                rhsw(i,j,k)=rhsw(i,j,k) - (pold(i,j,k)-pold(i,j,km))*dxi*rhoi
+                !rhsu(i,j,k)=rhsu(i,j,k) - (pold(i,j,k)-pold(im,j,k))*dxi*rhoi
+                !rhsv(i,j,k)=rhsv(i,j,k) - (pold(i,j,k)-pold(i,jm,k))*dxi*rhoi
+                !rhsw(i,j,k)=rhsw(i,j,k) - (pold(i,j,k)-pold(i,j,km))*dxi*rhoi
                 ! ABC forcing
                 rhsu(i,j,k)= rhsu(i,j,k) + f3*sin(k0*x(k))+f2*cos(k0*x(j))
                 rhsv(i,j,k)= rhsv(i,j,k) + f1*sin(k0*x(i))+f3*cos(k0*x(k))
@@ -358,7 +362,6 @@ do t=tstart,tfin
             enddo
         enddo
     enddo
-    !$acc end kernels
 
 
     ! Surface tension forces
@@ -396,28 +399,21 @@ do t=tstart,tfin
     #endif
 
     ! find u, v and w star (AB2), overwrite u,v and w
-    !$acc kernels
+    !$acc parallel loop collapse(3)
     do k=1,nx
         do j=1,nx
             do i=1,nx
                 u(i,j,k) = u(i,j,k) + dt*(alpha*rhsu(i,j,k)-beta*rhsu_o(i,j,k))
                 v(i,j,k) = v(i,j,k) + dt*(alpha*rhsv(i,j,k)-beta*rhsv_o(i,j,k))
                 w(i,j,k) = w(i,j,k) + dt*(alpha*rhsw(i,j,k)-beta*rhsw_o(i,j,k))
+    		    alpha=1.5d0
+    		    beta= 0.5d0
+    		    rhsu_o(i,j,k)=rhsu(i,j,k)
+		        rhsv_o(i,j,k)=rhsv(i,j,k)
+		        rhsw_o(i,j,k)=rhsw(i,j,k)
             enddo
         enddo
     enddo
-    !$acc end kernels
-
-    ! store rhs* in rhs*_o 
-    ! After first step move to AB2 
-    !$acc kernels
-    alpha=1.5d0
-    beta= 0.5d0
-    rhsu_o=rhsu
-    rhsv_o=rhsv
-    rhsw_o=rhsw
-    !$acc end kernels
-
 
     ! Compute rhs of Poisson equation div*ustar: divergence at the cell center 
     !$acc kernels
@@ -455,16 +451,17 @@ do t=tstart,tfin
                 u(i,j,k)=u(i,j,k) - dt/rho*(p(i,j,k)-p(im,j,k))*dxi
                 v(i,j,k)=v(i,j,k) - dt/rho*(p(i,j,k)-p(i,jm,k))*dxi
                 w(i,j,k)=w(i,j,k) - dt/rho*(p(i,j,k)-p(i,j,km))*dxi
-                pold(i,j,k)=pold(i,j,k) + p(i,j,k)
+                !pold(i,j,k)=pold(i,j,k) + p(i,j,k)
             enddo
         enddo
     enddo
    !$acc end kernels 
  
    ! Check divergence (can be skipped in production)
-    !$acc kernels 
-    do i=1,nx
-        do j=1,nx
+   maxdiv=0.d0
+   !$acc parallel loop collapse(3) reduction(max:maxdiv) present(u,v,w,div)
+   do i=1,nx
+       do j=1,nx
             do k=1,nx
                 ip=i+1
                 jp=j+1
@@ -477,11 +474,10 @@ do t=tstart,tfin
             enddo
         enddo
     enddo
-    !$acc end kernels
 
-    write(*,*) "maxdiv", maxval(div)
+    write(*,*) "maxdiv", maxdiv
 
-     ! remove mean velocity
+    ! remove mean velocity
     !$acc kernels
     umean=sum(u)/nx/nx/nx
     vmean=sum(v)/nx/nx/nx
@@ -534,6 +530,7 @@ do t=tstart,tfin
     endif
 
 enddo
+!$acc end data
 
 
 !deallocate

@@ -33,7 +33,7 @@ read(55,*) epsr
 ! compute pre-defined constant 
 pi=4.d0*datan(1.d0)
 lx=2.d0*pi
-dx=lx/(dble(nx)-1)
+dx=lx/(dble(nx))
 dxi=1.d0/dx
 ddxi=1.d0/dx/dx
 rhoi=1.d0/rho
