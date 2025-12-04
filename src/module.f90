@@ -26,7 +26,7 @@ end module fastp
 
 
 module velocity
-   double precision, allocatable :: div(:,:,:)
+   double precision, allocatable :: div(:,:,:), pold(:,:,:)
    double precision, allocatable :: u(:,:,:), v(:,:,:), w(:,:,:)
    double precision, allocatable :: ustar(:,:,:), vstar(:,:,:), wstar(:,:,:)
    double precision, allocatable :: rhsu(:,:,:), rhsv(:,:,:), rhsw(:,:,:)

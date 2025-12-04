@@ -20,7 +20,7 @@ use particles
 #define openaccflag 1
 
 implicit none
-double precision :: val,pos,gamma,umax,normod,uc,vc,wc !only used in main for temp variables
+double precision :: val,pos,gamma,umax,normod,uc,vc,wc,maxdiv !only used in main for temp variables
 double precision :: timef,times ! timers for elapsed time
 double precision :: h11,h12,h13,h21,h22,h23,h31,h32,h33,cou,umean,vmean,wmean !for advective terms in NS
 integer :: i,j,k,t,im,jm,km,ip,jp,kp ! loop index and + and - positions
@@ -37,6 +37,7 @@ call readinput
 allocate(div(nx,nx,nx))
 allocate(u(nx,nx,nx),v(nx,nx,nx),w(nx,nx,nx)) !velocity vector
 allocate(p(nx,nx,nx),rhsp(nx,nx,nx))  ! p and rhsp in physical space
+allocate(pold(nx,nx,nx))  ! p and rhsp in physical space
 allocate(pc(nx/2+1,nx,nx)) ! p and rhsp in complex space
 !allocate(ustar(nx,nx,nx),vstar(nx,nx,nx),wstar(nx,nx,nx)) ! provisional velocity field
 allocate(rhsu(nx,nx,nx),rhsv(nx,nx,nx),rhsw(nx,nx,nx)) ! rhs of u,v and w
@@ -213,7 +214,7 @@ do t=tstart,tfin
     do k=1,nx
         do j=1,nx
             do i=1,nx
-		val=min(phi(i,j,k),1.d0) ! avoid tiny overshots due to Euler integration
+		        val=min(phi(i,j,k),1.d0) ! avoid tiny overshots due to Euler integration
                 psi(i,j,k) = eps*dlog((val+enum)/(1.d0-val+enum))
             enddo
         enddo
@@ -244,10 +245,8 @@ do t=tstart,tfin
             enddo
         enddo
     enddo 
-    !$acc end kernels
 
     ! Step 2: Compute normals (1.e-16 is a numerical tolerance)
-    !$acc kernels
     do k=1,nx
         do j=1,nx
             do i=1,nx
@@ -277,10 +276,6 @@ do t=tstart,tfin
                 if (im .lt. 1) im=nx
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
-                ! CDI
-                !rhsphi(i,j,k)=rhsphi(i,j,k)+gamma*(((phi(ip,j,k)**2d0-phi(ip,j,k))*normx(ip,j,k)-(phi(im,j,k)**2d0-phi(im,j,k))*normx(im,j,k))*0.5d0*dxi + &
-                !                                   ((phi(i,jp,k)**2d0-phi(i,jp,k))*normy(i,jp,k)-(phi(i,jm,k)**2d0-phi(i,jm,k))*normy(i,jm,k))*0.5d0*dxi + &
-                !                                   ((phi(i,j,kp)**2d0-phi(i,j,kp))*normz(i,j,kp)-(phi(i,j,km)**2d0-phi(i,j,km))*normz(i,j,km))*0.5d0*dxi)
                 ! ACDI
                 rhsphi(i,j,k)=rhsphi(i,j,k) - gamma*((0.25d0*(1.d0-(tanh(0.5d0*psi(ip,j,k)*epsi))**2)*normx(ip,j,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(im,j,k)*epsi))**2)*normx(im,j,k))*0.5*dxi +&
                                                      (0.25d0*(1.d0-(tanh(0.5d0*psi(i,jp,k)*epsi))**2)*normy(i,jp,k)- 0.25d0*(1.d0-(tanh(0.5d0*psi(i,jm,k)*epsi))**2)*normy(i,jm,k))*0.5*dxi +&
@@ -307,7 +302,7 @@ do t=tstart,tfin
 
 
     ! Projection step, convective terms
-    !Convective terms NS
+    !Convective + diffusive + pressure gradients terms NS
     !$acc kernels
     do k=1,nx
         do j=1,nx
@@ -325,51 +320,20 @@ do t=tstart,tfin
                 if (jm .lt. 1) jm=nx
                 if (km .lt. 1) km=nx 
                 ! compute the products (conservative form)
-                h11 = (u(ip,j,k)+u(i,j,k))*(u(ip,j,k)+u(i,j,k))     - (u(i,j,k)+u(im,j,k))*(u(i,j,k)+u(im,j,k))
-                h12 = (u(i,jp,k)+u(i,j,k))*(v(i,jp,k)+v(im,jp,k))   - (u(i,j,k)+u(i,jm,k))*(v(i,j,k)+v(im,j,k))
-                h13 = (u(i,j,kp)+u(i,j,k))*(w(i,j,kp)+w(im,j,kp))   - (u(i,j,k)+u(i,j,km))*(w(i,j,k)+w(im,j,k))
-                h21 = (u(ip,j,k)+u(ip,jm,k))*(v(ip,j,k)+v(i,j,k))   - (u(i,j,k)+u(i,jm,k))*(v(i,j,k)+v(im,j,k))
-                h22 = (v(i,jp,k)+v(i,j,k))*(v(i,jp,k)+v(i,j,k))     - (v(i,j,k)+v(i,jm,k))*(v(i,j,k)+v(i,jm,k))
-                h23 = (w(i,j,kp)+w(i,jm,kp))*(v(i,j,kp)+v(i,j,k))   - (w(i,j,k)+w(i,jm,k))*(v(i,j,k)+v(i,j,km))
-                h31 = (w(ip,j,k)+w(i,j,k))*(u(ip,j,k)+u(ip,j,km))   - (w(i,j,k)+w(im,j,k))*(u(i,j,k)+u(i,j,km))
-                h32 = (v(i,jp,k)+v(i,jp,km))*(w(i,jp,k)+w(i,j,k))   - (v(i,j,k)+v(i,j,km))*(w(i,j,k)+w(i,jm,k))
-                h33 = (w(i,j,kp)+w(i,j,k))*(w(i,j,kp)+w(i,j,k))     - (w(i,j,k)+w(i,j,km))*(w(i,j,k)+w(i,j,km))
-                ! compute the derivative
-                h11=h11*0.25d0*dxi
-                h12=h12*0.25d0*dxi
-                h13=h13*0.25d0*dxi
-                h21=h21*0.25d0*dxi
-                h22=h22*0.25d0*dxi
-                h23=h23*0.25d0*dxi
-                h31=h31*0.25d0*dxi
-                h32=h32*0.25d0*dxi
-                h33=h33*0.25d0*dxi
+                h11 = 0.25d0*((u(ip,j,k)+u(i,j,k))*(u(ip,j,k)+u(i,j,k))     - (u(i,j,k)+u(im,j,k))*(u(i,j,k)+u(im,j,k)))*dxi
+                h12 = 0.25d0*((u(i,jp,k)+u(i,j,k))*(v(i,jp,k)+v(im,jp,k))   - (u(i,j,k)+u(i,jm,k))*(v(i,j,k)+v(im,j,k)))*dxi
+                h13 = 0.25d0*((u(i,j,kp)+u(i,j,k))*(w(i,j,kp)+w(im,j,kp))   - (u(i,j,k)+u(i,j,km))*(w(i,j,k)+w(im,j,k)))*dxi
+                h21 = 0.25d0*((u(ip,j,k)+u(ip,jm,k))*(v(ip,j,k)+v(i,j,k))   - (u(i,j,k)+u(i,jm,k))*(v(i,j,k)+v(im,j,k)))*dxi
+                h22 = 0.25d0*((v(i,jp,k)+v(i,j,k))*(v(i,jp,k)+v(i,j,k))     - (v(i,j,k)+v(i,jm,k))*(v(i,j,k)+v(i,jm,k)))*dxi
+                h23 = 0.25d0*((w(i,j,kp)+w(i,jm,kp))*(v(i,j,kp)+v(i,j,k))   - (w(i,j,k)+w(i,jm,k))*(v(i,j,k)+v(i,j,km)))*dxi
+                h31 = 0.25d0*((w(ip,j,k)+w(i,j,k))*(u(ip,j,k)+u(ip,j,km))   - (w(i,j,k)+w(im,j,k))*(u(i,j,k)+u(i,j,km)))*dxi
+                h32 = 0.25d0*((v(i,jp,k)+v(i,jp,km))*(w(i,jp,k)+w(i,j,k))   - (v(i,j,k)+v(i,j,km))*(w(i,j,k)+w(i,jm,k)))*dxi
+                h33 = 0.25d0*((w(i,j,kp)+w(i,j,k))*(w(i,j,kp)+w(i,j,k))     - (w(i,j,k)+w(i,j,km))*(w(i,j,k)+w(i,j,km)))*dxi
                 ! add to the rhs
                 rhsu(i,j,k)=-(h11+h12+h13)
                 rhsv(i,j,k)=-(h21+h22+h23)
                 rhsw(i,j,k)=-(h31+h32+h33)
-            enddo
-        enddo
-    enddo
-    !$acc end kernels
-  
-    ! Compute viscous terms
-    !$acc kernels
-    do k=1,nx
-        do j=1,nx
-            do i=1,nx
-                ip=i+1
-                jp=j+1
-                kp=k+1
-                im=i-1
-                jm=j-1
-                km=k-1
-                if (ip .gt. nx) ip=1
-                if (jp .gt. nx) jp=1
-                if (kp .gt. nx) kp=1
-                if (im .lt. 1) im=nx
-                if (jm .lt. 1) jm=nx
-                if (km .lt. 1) km=nx 
+                ! diffusive terms
                 h11 = mu*(u(ip,j,k)-2.d0*u(i,j,k)+u(im,j,k))*ddxi
                 h12 = mu*(u(i,jp,k)-2.d0*u(i,j,k)+u(i,jm,k))*ddxi
                 h13 = mu*(u(i,j,kp)-2.d0*u(i,j,k)+u(i,j,km))*ddxi
@@ -382,23 +346,15 @@ do t=tstart,tfin
                 rhsu(i,j,k)=rhsu(i,j,k)+(h11+h12+h13)*rhoi
                 rhsv(i,j,k)=rhsv(i,j,k)+(h21+h22+h23)*rhoi
                 rhsw(i,j,k)=rhsw(i,j,k)+(h31+h32+h33)*rhoi
-            enddo
-        enddo
-    enddo
-    !$acc end kernels
-
-    ! forcing term (always x because is the same axis)
-    !$acc kernels
-    do k=1,nx
-        do j=1,nx
-            do i=1,nx
+                ! pressure gradient terms (from pold)
+                rhsu(i,j,k)=rhsu(i,j,k) - (pold(i,j,k)-pold(im,j,k))*dxi*rhoi
+                rhsv(i,j,k)=rhsv(i,j,k) - (pold(i,j,k)-pold(i,jm,k))*dxi*rhoi
+                rhsw(i,j,k)=rhsw(i,j,k) - (pold(i,j,k)-pold(i,j,km))*dxi*rhoi
                 ! ABC forcing
                 rhsu(i,j,k)= rhsu(i,j,k) + f3*sin(k0*x(k))+f2*cos(k0*x(j))
                 rhsv(i,j,k)= rhsv(i,j,k) + f1*sin(k0*x(i))+f3*cos(k0*x(k))
                 rhsw(i,j,k)= rhsw(i,j,k) + f2*sin(k0*x(j))+f1*cos(k0*x(i))
                 ! TG Forcing
-                !rhsu(i,j,k)= rhsu(i,j,k) + f1*sin(k0*x(i))*cos(k0*x(j))*cos(k0*x(k))
-                !rhsv(i,j,k)= rhsv(i,j,k) - f1*cos(k0*x(i))*sin(k0*x(j))*sin(k0*x(k))
             enddo
         enddo
     enddo
@@ -499,29 +455,31 @@ do t=tstart,tfin
                 u(i,j,k)=u(i,j,k) - dt/rho*(p(i,j,k)-p(im,j,k))*dxi
                 v(i,j,k)=v(i,j,k) - dt/rho*(p(i,j,k)-p(i,jm,k))*dxi
                 w(i,j,k)=w(i,j,k) - dt/rho*(p(i,j,k)-p(i,j,km))*dxi
+                pold(i,j,k)=pold(i,j,k) + p(i,j,k)
             enddo
         enddo
     enddo
    !$acc end kernels 
  
    ! Check divergence (can be skipped in production)
-    !!$acc kernels 
-    !do i=1,nx
-    !    do j=1,nx
-    !        do k=1,nx
-    !            ip=i+1
-    !            jp=j+1
-    !            kp=k+1
-    !            if (ip .gt. nx) ip=1
-    !            if (jp .gt. nx) jp=1
-    !            if (kp .gt. nx) kp=1   
-    !            div(i,j,k) = dxi*(u(ip,j,k)-u(i,j,k) + v(i,jp,k)-v(i,j,k) + w(i,j,kp)-w(i,j,k))
-    !        enddo
-    !    enddo
-    !enddo
-    !!$acc end kernels
+    !$acc kernels 
+    do i=1,nx
+        do j=1,nx
+            do k=1,nx
+                ip=i+1
+                jp=j+1
+                kp=k+1
+                if (ip .gt. nx) ip=1
+                if (jp .gt. nx) jp=1
+                if (kp .gt. nx) kp=1   
+                div(i,j,k) = dxi*(u(ip,j,k)-u(i,j,k) + v(i,jp,k)-v(i,j,k) + w(i,j,kp)-w(i,j,k))
+                maxdiv=max(maxdiv,abs(div(i,j,k)))
+            enddo
+        enddo
+    enddo
+    !$acc end kernels
 
-    !write(*,*) "maxdiv", maxval(div)
+    write(*,*) "maxdiv", maxval(div)
 
      ! remove mean velocity
     !$acc kernels
